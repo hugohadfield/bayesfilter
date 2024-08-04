@@ -1,15 +1,13 @@
 # BayesFilter
 
-BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods.
+BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods. The only dependency is NumPy.
 
 ## Installation
 
-To install BayesFilter, clone the repository and navigate to the project directory:
+To install BayesFilter, just use `pip`:
 
 ```bash
-git clone https://github.com/username/bayesfilter.git
-cd bayesfilter
-pip install -r requirements.txt
+pip install bayesfilter
 ```
 
 ## Usage
