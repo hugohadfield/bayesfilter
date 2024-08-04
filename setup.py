@@ -10,4 +10,5 @@ setup(
     ],
     license='MIT',
     author='Hugo Hadfield',
+    long_description=open('README.md').read(),
 )
