@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='bayesfilter',
-    version='0.0.2',
+    version='0.0.4',
     packages=['bayesfilter'],
     install_requires=[
         'numpy',
