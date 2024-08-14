@@ -11,6 +11,7 @@ from bayesfilter.distributions import Gaussian
 from bayesfilter.model import StateTransitionModel
 from bayesfilter.observation import Observation
 
+
 class BayesianFilter:
     def __init__(self, state_transition_model: StateTransitionModel, initial_state: Gaussian):
         """
@@ -41,7 +42,7 @@ class BayesianFilter:
 
         # Compute the new state
         new_state = Gaussian(
-            mean=predicted_state.mean() + kalman_gain@residual,
+            mean=predicted_state.mean() + (kalman_gain@residual).flatten(),
             covariance=predicted_state.covariance() - kalman_gain@predicted_obsurement.noise_covariance@kalman_gain.T
         )
 
