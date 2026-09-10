@@ -205,6 +205,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 2D | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.constant_velocity_2d` |
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
+| Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -254,6 +255,30 @@ trajectory. The ellipses below show selected 95% smoothed position-confidence
 regions.
 
 ![Planar trajectory reconstruction from noisy position observations](examples/figures/planar-trajectory-tracking.png)
+
+### Bearings-only target tracking
+
+This example tracks a curved target without observing range or position
+directly. Two fixed sensors report noisy world-frame bearing unit vectors:
+
+```text
+x = [pₓ, pᵧ, vₓ, vᵧ]
+
+hᵢ(x) = (p - sᵢ) / ‖p - sᵢ‖,
+```
+
+where `sᵢ` is the position of sensor `i`. Encoding bearing as
+`[cos(bearing), sin(bearing)]` avoids a discontinuous scalar residual at
+`±π`. The observation remains strongly nonlinear and supplies no information
+in the instantaneous line-of-sight direction.
+
+Sensor 1 reports at 10 Hz. Sensor 2 reports at 2 Hz but is unavailable from
+5.5–11 seconds. During that interval, range is only weakly observable from
+target motion, so the filtered uncertainty grows along the remaining bearing
+geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
+smoother also uses those later measurements to reconstruct the dropout.
+
+![Bearings-only target tracking with interrupted triangulation](examples/figures/bearings-only-tracking.png)
 
 ### Heading-coupled planar tracking
 

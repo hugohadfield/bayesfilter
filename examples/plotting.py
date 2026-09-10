@@ -434,6 +434,209 @@ def plot_heading_coupled_tracking(result, output_path, show=False):
     plt.close(figure)
 
 
+def plot_bearings_only_tracking(result, output_path, show=False):
+    """Plot triangulation, dropout uncertainty, and RTS reconstruction."""
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+    dropout_start, dropout_end = result["dropout_interval"]
+
+    figure = plt.figure(figsize=(11.2, 7.2))
+    axes = figure.subplot_mosaic(
+        [["geometry", "error"], ["geometry", "uncertainty"]],
+        width_ratios=(1.2, 1.0),
+    )
+    geometry_axis = axes["geometry"]
+    error_axis = axes["error"]
+    uncertainty_axis = axes["uncertainty"]
+
+    sensor_colors = ("#0072B2", "#D55E00")
+    for sensor_index, (sensor_position, color) in enumerate(
+        zip(result["sensor_positions"], sensor_colors)
+    ):
+        measurement_times = result["sensor_times"][sensor_index]
+        measurements = result["sensor_measurements"][sensor_index]
+        selection = np.linspace(
+            0,
+            len(measurement_times) - 1,
+            min(9, len(measurement_times)),
+            dtype=int,
+        )
+        for ray_number, measurement_index in enumerate(selection):
+            measurement_time = measurement_times[measurement_index]
+            target_index = np.abs(times - measurement_time).argmin()
+            target_range = np.linalg.norm(truth[target_index, :2] - sensor_position)
+            endpoint = (
+                sensor_position + 1.08 * target_range * measurements[measurement_index]
+            )
+            geometry_axis.plot(
+                [sensor_position[0], endpoint[0]],
+                [sensor_position[1], endpoint[1]],
+                color=color,
+                alpha=0.18,
+                linewidth=0.9,
+                label=(
+                    f"Sensor {sensor_index + 1} bearing rays"
+                    if ray_number == 0
+                    else None
+                ),
+            )
+        geometry_axis.scatter(
+            sensor_position[0],
+            sensor_position[1],
+            marker="^",
+            s=75,
+            color=color,
+            edgecolor="white",
+            linewidth=0.8,
+            zorder=7,
+            label=f"Sensor {sensor_index + 1}",
+        )
+
+    geometry_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True target",
+        zorder=4,
+    )
+    geometry_axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.65,
+        label="Filtered",
+        zorder=5,
+    )
+    geometry_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+        zorder=6,
+    )
+    for ellipse_time in (4.5, 7.5, 10.5, 12.0, 14.5):
+        index = np.abs(times - ellipse_time).argmin()
+        _add_covariance_ellipse(
+            geometry_axis,
+            smoothed[index, :2],
+            result["smoothed_covariances"][index, :2, :2],
+            COLORS["smoother"],
+        )
+    geometry_axis.scatter(
+        truth[0, 0],
+        truth[0, 1],
+        marker="o",
+        s=42,
+        facecolor="white",
+        edgecolor=COLORS["truth"],
+        linewidth=1.4,
+        zorder=7,
+    )
+    geometry_axis.scatter(
+        truth[-1, 0],
+        truth[-1, 1],
+        marker="s",
+        s=42,
+        color=COLORS["truth"],
+        edgecolor="white",
+        linewidth=0.8,
+        zorder=7,
+    )
+    geometry_axis.set_title("Bearing geometry and reconstructed trajectory")
+    geometry_axis.set_xlabel("x position")
+    geometry_axis.set_ylabel("y position")
+    geometry_axis.set_aspect("equal", adjustable="datalim")
+    geometry_axis.legend(fontsize=7, ncol=2, loc="upper center")
+
+    filtered_error = np.linalg.norm(filtered[:, :2] - truth[:, :2], axis=1)
+    smoothed_error = np.linalg.norm(smoothed[:, :2] - truth[:, :2], axis=1)
+    error_axis.plot(
+        times,
+        filtered_error,
+        color=COLORS["filter"],
+        label=f"Filtered (RMSE {result['filtered_position_rmse']:.2f})",
+    )
+    error_axis.plot(
+        times,
+        smoothed_error,
+        color=COLORS["smoother"],
+        label=f"RTS smoothed (RMSE {result['smoothed_position_rmse']:.2f})",
+    )
+    error_axis.axvspan(
+        dropout_start,
+        dropout_end,
+        color="#BBBBBB",
+        alpha=0.20,
+        label="Sensor 2 unavailable",
+    )
+    error_axis.set_title("Position error during single-sensor interval")
+    error_axis.set_xlabel("Time [s]")
+    error_axis.set_ylabel("Euclidean error")
+    error_axis.legend(fontsize=8)
+
+    filtered_major_std = np.array(
+        [
+            np.sqrt(np.linalg.eigvalsh(covariance[:2, :2]).max())
+            for covariance in result["filtered_covariances"]
+        ]
+    )
+    smoothed_major_std = np.array(
+        [
+            np.sqrt(np.linalg.eigvalsh(covariance[:2, :2]).max())
+            for covariance in result["smoothed_covariances"]
+        ]
+    )
+    uncertainty_axis.plot(
+        times,
+        filtered_major_std,
+        color=COLORS["filter"],
+        label="Filtered",
+    )
+    uncertainty_axis.plot(
+        times,
+        smoothed_major_std,
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    uncertainty_axis.axvspan(
+        dropout_start,
+        dropout_end,
+        color="#BBBBBB",
+        alpha=0.20,
+    )
+    uncertainty_axis.vlines(
+        result["sensor_times"][1],
+        0.0,
+        0.06,
+        transform=uncertainty_axis.get_xaxis_transform(),
+        color=sensor_colors[1],
+        alpha=0.55,
+        linewidth=1.0,
+        label="Sensor 2 bearings",
+    )
+    uncertainty_axis.set_title("Major-axis position uncertainty")
+    uncertainty_axis.set_xlabel("Time [s]")
+    uncertainty_axis.set_ylabel("Posterior σ")
+    uncertainty_axis.legend(fontsize=8)
+
+    mode = "Jacobian" if result["use_jacobian"] else "Unscented"
+    figure.suptitle(
+        f"{mode} bearings-only tracking with interrupted triangulation",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)
+
+
 def plot_rigid_body_tracking(result, output_path, show=False):
     plt = _pyplot()
     times = result["times"]
