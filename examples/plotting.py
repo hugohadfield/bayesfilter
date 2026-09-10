@@ -353,3 +353,140 @@ def plot_inertia_estimation(result, output_path, show=False):
     if show:
         plt.show()
     plt.close(figure)
+
+
+def plot_readme_inertia_summary(result, output_path, show=False):
+    """Plot a compact rigid-body inference summary for the main README."""
+    from examples.rigid_body import transform_canonical_points
+
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    smoothed = result["smoothed"]
+    measurements = result["measurements"].reshape(-1, 4, 3)
+    ratio_truth = result["true_inertia_ratios"]
+    ratio_filtered = result["filtered_inertia_ratios"]
+    parameter_std = np.sqrt(
+        np.stack(
+            [
+                np.diag(covariance)[12:14]
+                for covariance in result["filtered_covariances"]
+            ]
+        )
+    )
+
+    figure, axes = plt.subplots(1, 3, figsize=(13.0, 4.2))
+    trajectory_axis, ratio_axis, attitude_axis = axes
+
+    for marker_index in range(measurements.shape[1]):
+        trajectory_axis.scatter(
+            measurements[:, marker_index, 0],
+            measurements[:, marker_index, 1],
+            s=6,
+            alpha=0.10,
+            color=COLORS["measurement"],
+            edgecolors="none",
+            label="Noisy world points" if marker_index == 0 else None,
+        )
+    trajectory_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True center",
+    )
+    trajectory_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed center",
+    )
+    body_axis_colors = ("#0072B2", "#D55E00", "#009E73")
+    snapshot_indices = np.linspace(0, len(times) - 1, 6, dtype=int)
+    for snapshot_number, snapshot_index in enumerate(snapshot_indices):
+        world_points = transform_canonical_points(
+            smoothed[snapshot_index, :12]
+        ).reshape(-1, 3)
+        for body_axis_index, color in enumerate(body_axis_colors, start=1):
+            trajectory_axis.plot(
+                world_points[[0, body_axis_index], 0],
+                world_points[[0, body_axis_index], 1],
+                color=color,
+                alpha=0.62,
+                linewidth=1.2,
+                label=(
+                    f"Body axis {body_axis_index}" if snapshot_number == 0 else None
+                ),
+            )
+    trajectory_axis.set_title("World-space point observations")
+    trajectory_axis.set_xlabel("x position")
+    trajectory_axis.set_ylabel("y position")
+    trajectory_axis.set_aspect("equal", adjustable="datalim")
+    trajectory_axis.legend(fontsize=7, loc="best")
+
+    for index, (label, color) in enumerate(
+        (("I₂ / I₁", "#0072B2"), ("I₃ / I₁", "#D55E00"))
+    ):
+        ratio_std = ratio_filtered[:, index] * parameter_std[:, index]
+        ratio_axis.fill_between(
+            times,
+            ratio_filtered[:, index] - 2.0 * ratio_std,
+            ratio_filtered[:, index] + 2.0 * ratio_std,
+            color=color,
+            alpha=0.14,
+            linewidth=0,
+        )
+        ratio_axis.plot(
+            times,
+            ratio_filtered[:, index],
+            color=color,
+            label=f"Estimated {label}",
+        )
+        ratio_axis.axhline(
+            ratio_truth[index],
+            color=color,
+            linestyle="--",
+            linewidth=1.4,
+            label=f"True {label}",
+        )
+    ratio_axis.set_title("Inferred inertia ratios")
+    ratio_axis.set_xlabel("Time [s]")
+    ratio_axis.set_ylabel("Principal-inertia ratio")
+    ratio_axis.legend(fontsize=7, ncol=2)
+
+    attitude_axis.plot(
+        times,
+        np.degrees(result["filtered_rotation_error"]),
+        color=COLORS["filter"],
+        label="Filtered",
+    )
+    attitude_axis.plot(
+        times,
+        np.degrees(result["smoothed_rotation_error"]),
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    attitude_axis.fill_between(
+        times,
+        0.0,
+        np.degrees(result["smoothed_rotation_error"]),
+        color=COLORS["smoother"],
+        alpha=0.08,
+        linewidth=0,
+    )
+    attitude_axis.set_title("Geodesic attitude error")
+    attitude_axis.set_xlabel("Time [s]")
+    attitude_axis.set_ylabel("Angle [deg]")
+    attitude_axis.legend()
+
+    figure.suptitle(
+        "Rigid-body state and inertia estimation from noisy point measurements",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)

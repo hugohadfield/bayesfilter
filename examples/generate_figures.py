@@ -4,6 +4,7 @@ from pathlib import Path
 
 from examples.plotting import (
     plot_inertia_estimation,
+    plot_readme_inertia_summary,
     plot_rigid_body_tracking,
     run_and_plot_linear_example,
 )
@@ -30,9 +31,14 @@ def main():
         run_known_inertia_rigid_body(),
         figure_directory / "rigid-body-known-inertia.png",
     )
+    inertia_result = run_inertia_estimation_rigid_body()
     plot_inertia_estimation(
-        run_inertia_estimation_rigid_body(),
+        inertia_result,
         figure_directory / "rigid-body-inertia-estimation.png",
+    )
+    plot_readme_inertia_summary(
+        inertia_result,
+        figure_directory / "readme-rigid-body-inference.png",
     )
 
 

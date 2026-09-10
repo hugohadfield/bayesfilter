@@ -2,7 +2,7 @@
 
 BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods. The only dependency is NumPy.
 
-![Constant-velocity filtering and RTS smoothing of noisy position measurements](examples/figures/constant-velocity-1d.png)
+![Rigid-body state and inertia estimation from noisy world-space point measurements](examples/figures/readme-rigid-body-inference.png)
 
 ## Installation
 
