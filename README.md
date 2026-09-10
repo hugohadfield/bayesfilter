@@ -115,6 +115,11 @@ smoother_states = RTS(bayes_filter).smooth(
 Use the explicit `run()` followed by `apply()` form when the corresponding
 filter timestamps are also needed.
 
+![One-dimensional constant-velocity filtering and RTS smoothing](examples/figures/constant-velocity-1d.png)
+
+*Noisy position measurements are filtered forward and then refined by the RTS
+smoother; velocity is inferred without being observed directly.*
+
 ## Jacobian and unscented modes
 
 Set `use_jacobian=True` on filtering and smoothing calls to use the supplied
@@ -199,6 +204,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 1D | `[p, v]` | `python -m examples.constant_velocity_1d` |
 | Constant velocity, 2D | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.constant_velocity_2d` |
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
+| Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -241,6 +247,12 @@ Q = q [[dt³/3, dt²/2],
 | 1D | 2D | 3D |
 | --- | --- | --- |
 | ![Constant-velocity tracking in one dimension](examples/figures/constant-velocity-1d.png) | ![Constant-velocity tracking in two dimensions](examples/figures/constant-velocity-2d.png) | ![Constant-velocity tracking in three dimensions](examples/figures/constant-velocity-3d.png) |
+
+The same position-and-velocity state can reconstruct a curved planar
+trajectory. The ellipses below show selected 95% smoothed position-confidence
+regions.
+
+![Planar trajectory reconstruction from noisy position observations](examples/figures/planar-trajectory-tracking.png)
 
 ### Constant-acceleration tracking
 

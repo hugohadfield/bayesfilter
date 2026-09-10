@@ -5,6 +5,7 @@ from examples.linear_tracking import (
     constant_acceleration_matrix,
     constant_velocity_matrix,
     run_linear_tracking,
+    run_planar_tracking,
     white_acceleration_covariance,
     white_jerk_covariance,
 )
@@ -88,3 +89,16 @@ def test_unscented_linear_example_matches_jacobian_example():
         jacobian_result["smoothed"],
         atol=1e-6,
     )
+
+
+def test_planar_tracking_example_reconstructs_curved_trajectory():
+    result = run_planar_tracking()
+
+    assert result["truth"].shape == (76, 4)
+    assert result["measurements"].shape == (75, 2)
+    assert result["smoothed_rmse"] < result["filtered_rmse"]
+    assert np.ptp(result["truth"][:, 0]) > 6.0
+    assert np.ptp(result["truth"][:, 1]) > 5.0
+    for covariance in result["smoothed_covariances"]:
+        np.testing.assert_allclose(covariance, covariance.T, atol=1e-10)
+        assert np.linalg.eigvalsh(covariance).min() >= -1e-10

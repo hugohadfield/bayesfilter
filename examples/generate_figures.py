@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
+from examples.linear_tracking import run_planar_tracking
 from examples.plotting import (
     plot_inertia_estimation,
+    plot_planar_tracking,
     plot_readme_inertia_summary,
     plot_rigid_body_tracking,
     run_and_plot_linear_example,
@@ -27,6 +29,11 @@ def main():
             )
 
     figure_directory = Path(__file__).parent / "figures"
+    plot_planar_tracking(
+        run_planar_tracking(),
+        figure_directory / "planar-trajectory-tracking.png",
+    )
+
     plot_rigid_body_tracking(
         run_known_inertia_rigid_body(),
         figure_directory / "rigid-body-known-inertia.png",

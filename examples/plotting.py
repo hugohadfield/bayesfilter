@@ -143,6 +143,114 @@ def run_and_plot_linear_example(dimension, derivative_order, filename):
     print(f"saved {output_path}")
 
 
+def _add_covariance_ellipse(axis, mean, covariance, color):
+    from matplotlib.patches import Ellipse
+
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    order = eigenvalues.argsort()[::-1]
+    eigenvalues = eigenvalues[order]
+    eigenvectors = eigenvectors[:, order]
+    angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
+    scale_95_percent = np.sqrt(5.991)
+    width, height = 2.0 * scale_95_percent * np.sqrt(eigenvalues)
+    axis.add_patch(
+        Ellipse(
+            xy=mean,
+            width=width,
+            height=height,
+            angle=angle,
+            facecolor=color,
+            edgecolor=color,
+            alpha=0.10,
+            linewidth=0.8,
+        )
+    )
+
+
+def plot_planar_tracking(result, output_path, show=False):
+    """Plot a curved two-dimensional trajectory and position uncertainty."""
+    plt = _pyplot()
+    truth = result["truth"]
+    measurements = result["measurements"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+
+    figure, axis = plt.subplots(figsize=(9.5, 6.0))
+    axis.scatter(
+        measurements[:, 0],
+        measurements[:, 1],
+        s=17,
+        color=COLORS["measurement"],
+        alpha=0.55,
+        edgecolors="none",
+        label="Position measurements",
+        zorder=2,
+    )
+    axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True trajectory",
+        zorder=3,
+    )
+    axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        label=f"Filtered (RMSE {result['filtered_rmse']:.2f})",
+        zorder=4,
+    )
+    axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label=f"RTS smoothed (RMSE {result['smoothed_rmse']:.2f})",
+        zorder=5,
+    )
+    for index in range(5, len(smoothed), 10):
+        _add_covariance_ellipse(
+            axis,
+            smoothed[index, :2],
+            result["smoothed_covariances"][index, :2, :2],
+            COLORS["smoother"],
+        )
+    axis.scatter(
+        truth[0, 0],
+        truth[0, 1],
+        marker="o",
+        s=45,
+        facecolor="white",
+        edgecolor=COLORS["truth"],
+        linewidth=1.5,
+        zorder=6,
+        label="Start",
+    )
+    axis.scatter(
+        truth[-1, 0],
+        truth[-1, 1],
+        marker="s",
+        s=42,
+        facecolor=COLORS["truth"],
+        edgecolor="white",
+        linewidth=0.8,
+        zorder=6,
+        label="End",
+    )
+    axis.set_title("Planar trajectory reconstruction")
+    axis.set_xlabel("x position")
+    axis.set_ylabel("y position")
+    axis.set_aspect("equal", adjustable="datalim")
+    axis.legend(loc="upper right")
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)
+
+
 def plot_rigid_body_tracking(result, output_path, show=False):
     plt = _pyplot()
     times = result["times"]

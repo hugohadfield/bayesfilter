@@ -231,3 +231,98 @@ def run_linear_tracking(
         "process_covariance": process_covariance,
         "observation_matrix": observation_matrix,
     }
+
+
+def run_planar_tracking(seed=11, num_steps=75, delta_t_s=0.2):
+    """Track a curved planar trajectory with a constant-velocity model."""
+    rng = np.random.default_rng(seed)
+    times = np.arange(num_steps + 1, dtype=float) * delta_t_s
+    angle = -1.1 + 0.22 * times
+    truth = np.column_stack(
+        (
+            4.0 * np.cos(angle),
+            3.0 * np.sin(angle),
+            -0.88 * np.sin(angle),
+            0.66 * np.cos(angle),
+        )
+    )
+    transition_matrix = constant_velocity_matrix(2, delta_t_s)
+    process_covariance = white_acceleration_covariance(
+        2,
+        delta_t_s,
+        spectral_density=0.18,
+    )
+    observation_matrix = position_observation_matrix(2, 1)
+
+    def transition(state, step_s):
+        return constant_velocity_matrix(2, step_s) @ state
+
+    def transition_jacobian(_state, step_s):
+        return constant_velocity_matrix(2, step_s)
+
+    def observe_position(state):
+        return observation_matrix @ state
+
+    def observation_jacobian(_state):
+        return observation_matrix
+
+    measurement_std = 0.45
+    measurements = truth[1:, :2] + rng.normal(
+        0.0,
+        measurement_std,
+        (num_steps, 2),
+    )
+    measurement_covariance = measurement_std**2 * np.eye(2)
+    observations = [
+        Observation(
+            measurement,
+            measurement_covariance,
+            observe_position,
+            observation_jacobian,
+        )
+        for measurement in measurements
+    ]
+    model = StateTransitionModel(
+        transition,
+        process_covariance,
+        transition_jacobian,
+    )
+    bayes_filter = BayesianFilter(
+        model,
+        Gaussian(
+            truth[0] + np.array([0.7, -0.5, 0.2, -0.2]),
+            np.diag([0.9, 0.9, 0.35, 0.35]),
+        ),
+    )
+    filter_states = bayes_filter.run_synchronous(
+        observations,
+        times,
+        use_jacobian=True,
+    )
+    smoother_states = RTS(bayes_filter).apply(
+        filter_states,
+        times,
+        use_jacobian=True,
+    )
+    filtered = np.array([state.mean() for state in filter_states])
+    smoothed = np.array([state.mean() for state in smoother_states])
+    filtered_covariances = np.array([state.covariance() for state in filter_states])
+    smoothed_covariances = np.array([state.covariance() for state in smoother_states])
+
+    def position_rmse(states):
+        return np.sqrt(np.mean(np.sum((states[:, :2] - truth[:, :2]) ** 2, axis=1)))
+
+    return {
+        "times": times,
+        "truth": truth,
+        "measurements": measurements,
+        "filtered": filtered,
+        "smoothed": smoothed,
+        "filtered_covariances": filtered_covariances,
+        "smoothed_covariances": smoothed_covariances,
+        "filtered_rmse": position_rmse(filtered),
+        "smoothed_rmse": position_rmse(smoothed),
+        "transition_matrix": transition_matrix,
+        "process_covariance": process_covariance,
+        "observation_matrix": observation_matrix,
+    }
