@@ -1,18 +1,8 @@
 # BayesFilter
 
-![Bayesian inference flowing from uncertain distributions and observations into a smoothed trajectory](docs/assets/bayesfilter-hero.png)
+BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods. The only dependency is NumPy.
 
-BayesFilter is a small NumPy library for Bayesian filtering, smoothing, and
-state estimation. Its current algorithms use Gaussian state approximations,
-but the library is intended to grow into a more general home for Bayesian
-filtering methods over time.
-
-The current implementation supports two propagation modes:
-
-- Jacobian linearization for extended Kalman filtering and smoothing.
-- Sigma-point propagation for unscented filtering and smoothing.
-
-The runtime dependency is NumPy.
+![Constant-velocity filtering and RTS smoothing of noisy position measurements](docs/figures/constant-velocity-tracking.png)
 
 ## Installation
 
@@ -125,10 +115,10 @@ smoother_states = RTS(bayes_filter).smooth(
 Use the explicit `run()` followed by `apply()` form when the corresponding
 filter timestamps are also needed.
 
-![Noisy observations, a responsive filtered estimate, and a globally coherent smoothed trajectory](docs/assets/filtering-and-smoothing.png)
+![A two-dimensional trajectory reconstructed from noisy position measurements](docs/figures/planar-trajectory-tracking.png)
 
-*Conceptually, filtering estimates the current state from observations seen so
-far, while smoothing revisits earlier states using later observations.*
+*Both figures are generated from deterministic BayesFilter runs by
+`docs/generate_readme_figures.py`.*
 
 ## Jacobian and unscented modes
 
