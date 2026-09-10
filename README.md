@@ -2,7 +2,7 @@
 
 BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods. The only dependency is NumPy.
 
-![Constant-velocity filtering and RTS smoothing of noisy position measurements](docs/figures/constant-velocity-tracking.png)
+![Constant-velocity filtering and RTS smoothing of noisy position measurements](examples/figures/constant-velocity-1d.png)
 
 ## Installation
 
@@ -115,10 +115,19 @@ smoother_states = RTS(bayes_filter).smooth(
 Use the explicit `run()` followed by `apply()` form when the corresponding
 filter timestamps are also needed.
 
-![A two-dimensional trajectory reconstructed from noisy position measurements](docs/figures/planar-trajectory-tracking.png)
+![Rigid-body filtering and smoothing with known inertia](examples/figures/rigid-body-known-inertia.png)
 
-*Both figures are generated from deterministic BayesFilter runs by
-`docs/generate_readme_figures.py`.*
+*Both figures are generated from deterministic BayesFilter example runs.*
+
+## More examples
+
+The [`examples/`](examples/) directory contains complete constant-velocity and
+constant-acceleration tracking examples in one, two, and three dimensions. It
+also includes full-pose rigid-body tracking with SO(3) bivector coordinates,
+world-space point observations, and augmented-state inertia-ratio inference.
+
+See the [examples guide](examples/README.md) for the model equations, figures,
+limitations, and runnable commands.
 
 ## Jacobian and unscented modes
 
@@ -204,6 +213,7 @@ minimum configured in `pytest.ini`.
 - `bayesfilter/filtering.py`: Bayesian prediction and update loops.
 - `bayesfilter/smoothing.py`: RTS smoothing.
 - `bayesfilter/unscented.py`: Unscented-transform utilities.
+- `examples/`: Runnable tracking and rigid-body examples and their figures.
 - `tests/`: Unit and integration tests.
 
 ## License
