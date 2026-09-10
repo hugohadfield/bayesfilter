@@ -205,6 +205,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 2D | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.constant_velocity_2d` |
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
+| Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -253,6 +254,47 @@ trajectory. The ellipses below show selected 95% smoothed position-confidence
 regions.
 
 ![Planar trajectory reconstruction from noisy position observations](examples/figures/planar-trajectory-tracking.png)
+
+### Heading-coupled planar tracking
+
+This example models a nonholonomic vehicle with state
+
+```text
+x = [pₓ, pᵧ, ψ, v, κ],
+```
+
+where `ψ` is its unwrapped world heading, `v` is signed longitudinal speed,
+and `κ` is signed curvature. Heading rate is coupled to motion:
+
+```text
+ψ̇ = v κ.
+```
+
+The vehicle therefore cannot turn in place: both translation and heading rate
+vanish when `v = 0`. Negative speed represents reversing and changes the sign
+of the heading rate for fixed curvature. The discrete midpoint transition is
+
+```text
+α = ψ + ½ dt v κ
+
+pₓ' = pₓ + dt v cos(α)
+pᵧ' = pᵧ + dt v sin(α)
+ψ'  = ψ + dt v κ.
+```
+
+The filter asynchronously fuses noisy 5 Hz global position fixes with noisy
+20 Hz body-frame angular-rate measurements:
+
+```text
+z_position = [pₓ, pᵧ] + noise
+z_gyro     = v κ + noise.
+```
+
+The deterministic trajectory drives forward, stops from 8–10 seconds, and
+then reverses. The default example uses unscented propagation; analytic
+Jacobians are also supplied and tested.
+
+![Heading-coupled tracking from global position and local angular-rate measurements](examples/figures/heading-coupled-tracking.png)
 
 ### Constant-acceleration tracking
 

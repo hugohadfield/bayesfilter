@@ -251,6 +251,189 @@ def plot_planar_tracking(result, output_path, show=False):
     plt.close(figure)
 
 
+def plot_heading_coupled_tracking(result, output_path, show=False):
+    """Plot asynchronous position/gyro tracking of a nonholonomic vehicle."""
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+
+    figure, axes = plt.subplots(2, 2, figsize=(10.6, 7.8))
+    trajectory_axis, heading_axis, motion_axis, angular_rate_axis = axes.flat
+
+    trajectory_axis.scatter(
+        result["position_measurements"][:, 0],
+        result["position_measurements"][:, 1],
+        s=16,
+        color=COLORS["measurement"],
+        alpha=0.55,
+        edgecolors="none",
+        label="Global position measurements",
+    )
+    trajectory_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True trajectory",
+    )
+    trajectory_axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    trajectory_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    heading_indices = np.linspace(0, len(times) - 1, 13, dtype=int)
+    trajectory_axis.quiver(
+        smoothed[heading_indices, 0],
+        smoothed[heading_indices, 1],
+        np.cos(smoothed[heading_indices, 2]),
+        np.sin(smoothed[heading_indices, 2]),
+        angles="xy",
+        scale_units="xy",
+        scale=2.2,
+        width=0.005,
+        color=COLORS["smoother"],
+        alpha=0.7,
+        label="Estimated heading",
+    )
+    trajectory_axis.set_title("Global trajectory and vehicle heading")
+    trajectory_axis.set_xlabel("x position")
+    trajectory_axis.set_ylabel("y position")
+    trajectory_axis.set_aspect("equal", adjustable="datalim")
+    trajectory_axis.legend(fontsize=8)
+
+    heading_axis.plot(
+        times,
+        np.degrees(truth[:, 2]),
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True heading",
+    )
+    heading_axis.plot(
+        times,
+        np.degrees(filtered[:, 2]),
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    heading_axis.plot(
+        times,
+        np.degrees(smoothed[:, 2]),
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    heading_axis.axvspan(8.0, 10.0, color="#BBBBBB", alpha=0.18, label="Stopped")
+    heading_axis.set_title("Heading freezes when the vehicle stops")
+    heading_axis.set_xlabel("Time [s]")
+    heading_axis.set_ylabel("Unwrapped heading [deg]")
+    heading_axis.legend(fontsize=8)
+
+    motion_axis.plot(
+        times,
+        truth[:, 3],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True signed speed",
+    )
+    motion_axis.plot(
+        times,
+        smoothed[:, 3],
+        color=COLORS["filter"],
+        label="Smoothed signed speed",
+    )
+    motion_axis.axhline(0.0, color="#777777", linewidth=0.8)
+    motion_axis.axvspan(8.0, 10.0, color="#BBBBBB", alpha=0.18)
+    motion_axis.set_title("Forward, stopped, and reverse motion")
+    motion_axis.set_xlabel("Time [s]")
+    motion_axis.set_ylabel("Signed speed")
+    curvature_axis = motion_axis.twinx()
+    curvature_axis.plot(
+        times,
+        truth[:, 4],
+        color="#009E73",
+        linestyle="--",
+        alpha=0.75,
+        label="True curvature",
+    )
+    curvature_axis.plot(
+        times,
+        smoothed[:, 4],
+        color="#009E73",
+        alpha=0.45,
+        label="Smoothed curvature",
+    )
+    curvature_axis.set_ylabel("Curvature", color="#007A59")
+    motion_lines, motion_labels = motion_axis.get_legend_handles_labels()
+    curvature_lines, curvature_labels = curvature_axis.get_legend_handles_labels()
+    motion_axis.legend(
+        motion_lines + curvature_lines,
+        motion_labels + curvature_labels,
+        fontsize=8,
+        loc="lower left",
+    )
+
+    true_angular_rate = truth[:, 3] * truth[:, 4]
+    filtered_angular_rate = filtered[:, 3] * filtered[:, 4]
+    smoothed_angular_rate = smoothed[:, 3] * smoothed[:, 4]
+    angular_rate_axis.scatter(
+        result["angular_rate_times"],
+        result["angular_rate_measurements"],
+        s=7,
+        color=COLORS["measurement"],
+        alpha=0.30,
+        edgecolors="none",
+        label="Local gyro measurements",
+    )
+    angular_rate_axis.plot(
+        times,
+        true_angular_rate,
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True vκ",
+    )
+    angular_rate_axis.plot(
+        times,
+        filtered_angular_rate,
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered vκ",
+    )
+    angular_rate_axis.plot(
+        times,
+        smoothed_angular_rate,
+        color=COLORS["smoother"],
+        label="Smoothed vκ",
+    )
+    angular_rate_axis.axhline(0.0, color="#777777", linewidth=0.8)
+    angular_rate_axis.axvspan(8.0, 10.0, color="#BBBBBB", alpha=0.18)
+    angular_rate_axis.set_title("Body-frame angular rate: ω = vκ")
+    angular_rate_axis.set_xlabel("Time [s]")
+    angular_rate_axis.set_ylabel("Angular rate [rad/s]")
+    angular_rate_axis.legend(fontsize=8, ncol=2)
+
+    mode = "Jacobian" if result["use_jacobian"] else "Unscented"
+    figure.suptitle(
+        f"{mode} heading-coupled tracking from global position and local gyro",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)
+
+
 def plot_rigid_body_tracking(result, output_path, show=False):
     plt = _pyplot()
     times = result["times"]

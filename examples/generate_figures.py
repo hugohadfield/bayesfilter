@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
+from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.plotting import (
+    plot_heading_coupled_tracking,
     plot_inertia_estimation,
     plot_planar_tracking,
     plot_readme_inertia_summary,
@@ -32,6 +34,10 @@ def main():
     plot_planar_tracking(
         run_planar_tracking(),
         figure_directory / "planar-trajectory-tracking.png",
+    )
+    plot_heading_coupled_tracking(
+        run_heading_coupled_tracking(),
+        figure_directory / "heading-coupled-tracking.png",
     )
 
     plot_rigid_body_tracking(
