@@ -13,6 +13,12 @@ setup(
     install_requires=[
         'numpy',
     ],
+    extras_require={
+        'test': [
+            'pytest>=7',
+            'pytest-cov>=4',
+        ],
+    },
     license='MIT',
     author='Hugo Hadfield',
     author_email="hadfield.hugo@gmail.com",

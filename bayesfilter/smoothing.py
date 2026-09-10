@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 
@@ -61,7 +61,7 @@ class RTS:
         times_s: List[float], 
         rate_hz: float = 1.0,
         use_jacobian = False,
-    ) -> Tuple[List[Gaussian], List[float]]:
+    ) -> List[Gaussian]:
         """
         Smooths the observations using the general RTS algorithm
         """

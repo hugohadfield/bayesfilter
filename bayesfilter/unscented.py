@@ -80,27 +80,3 @@ def propagate_gaussian_cross_cov(
     gaussian = Gaussian(mean, covariance)
     new_gaussian, cross_covariance = unscented_transform_cross_cov(gaussian, non_linear_function)
     return new_gaussian.mean(), new_gaussian.covariance(), cross_covariance
-
-
-def test_unscented_transform_linear_func():
-    """
-    Test the unscented transform with a linear function.
-    """
-    mean = np.array([1.0, 2.0])
-    covariance = np.array([[1.0, 0.0], [0.0, 1.0]])
-    gaussian = Gaussian(mean, covariance)
-
-    def linear_function(x):
-        return np.array([2.0*x[0], 3.0*x[1]])
-    
-    jacobian = np.array([[2.0, 0.0], [0.0, 3.0]])
-
-    transformed_gaussian = unscented_transform(gaussian, linear_function)
-    expected_mean = linear_function(mean)
-    expected_covariance = jacobian @ covariance @ jacobian.T
-    assert np.allclose(transformed_gaussian.mean(), expected_mean)
-    assert np.allclose(transformed_gaussian.covariance(), expected_covariance)
-
-
-if __name__ == '__main__':
-    test_unscented_transform_linear_func()
