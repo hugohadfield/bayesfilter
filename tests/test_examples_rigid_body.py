@@ -129,12 +129,16 @@ def test_inertia_estimation_converges_and_contracts_uncertainty():
         np.diag(inertia_from_log_ratios(np.log(true_ratios))),
         [1.0, 1.4, 1.8],
     )
-    assert final_error < 0.35 * initial_error
-    assert np.all(final_parameter_std < 0.75 * initial_parameter_std)
+    assert result["truth"].shape == (101, 12)
+    assert result["measurements"].shape == (100, 12)
+    assert final_error < 0.05 * initial_error
+    assert np.all(final_parameter_std < 0.65 * initial_parameter_std)
     assert np.mean(result["smoothed_rotation_error"]) < np.mean(
         result["filtered_rotation_error"]
     )
-    assert np.max(np.linalg.norm(result["truth"][:, 6:9], axis=1)) < 2.6
+    truth_rotation_vectors = result["truth"][:, 6:9]
+    assert np.max(np.linalg.norm(truth_rotation_vectors, axis=1)) < 2.9
+    assert np.max(np.linalg.norm(np.diff(truth_rotation_vectors, axis=0), axis=1)) < 0.1
     assert (
         rotation_distance(
             result["truth"][-1, 6:9],

@@ -169,6 +169,8 @@ two identifiable log ratios
 Exponentiation keeps the inferred ratios positive. The parameters have tiny
 process noise and are inferred indirectly from the observed world-space point
 trajectories—there are no direct angular-velocity or inertia measurements.
+The default run uses 100 point-observation sets over four seconds, making both
+the ratio convergence and posterior-uncertainty contraction visible.
 
 ![Rigid-body inertia-ratio inference](figures/rigid-body-inertia-estimation.png)
 

@@ -316,26 +316,22 @@ def run_known_inertia_rigid_body(seed=301, num_steps=45, delta_t_s=0.06):
     )
 
 
-def run_inertia_estimation_rigid_body(seed=302, num_steps=40, delta_t_s=0.06):
+def run_inertia_estimation_rigid_body(seed=302, num_steps=100, delta_t_s=0.04):
     rng = np.random.default_rng(seed)
     times = np.arange(num_steps + 1, dtype=float) * delta_t_s
     inertia_matrix = np.diag([1.0, 1.4, 1.8])
     true_log_ratios = np.log(np.diag(inertia_matrix)[1:])
-    initial_truth = np.array(
-        [
-            -0.4,
-            0.2,
-            0.1,
-            0.30,
-            -0.08,
-            0.12,
-            0.18,
-            -0.12,
-            0.08,
-            0.82,
-            0.48,
-            0.33,
-        ]
+    initial_angular_velocity = np.array([0.82, 0.48, 0.33])
+    # This buys enough chart range for a longer run without crossing the pi cut.
+    initial_rotation_vector = (
+        -1.2 * initial_angular_velocity / np.linalg.norm(initial_angular_velocity)
+    )
+    initial_truth = np.concatenate(
+        (
+            np.array([-0.4, 0.2, 0.1, 0.30, -0.08, 0.12]),
+            initial_rotation_vector,
+            initial_angular_velocity,
+        )
     )
     truth = simulate_rigid_body_truth(initial_truth, times, inertia_matrix)
     measurements, _ = _rigid_body_observations(
