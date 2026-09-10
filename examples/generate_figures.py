@@ -2,9 +2,11 @@
 
 from pathlib import Path
 
+from examples.bearings_only import run_bearings_only_tracking
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.plotting import (
+    plot_bearings_only_tracking,
     plot_heading_coupled_tracking,
     plot_inertia_estimation,
     plot_planar_tracking,
@@ -34,6 +36,10 @@ def main():
     plot_planar_tracking(
         run_planar_tracking(),
         figure_directory / "planar-trajectory-tracking.png",
+    )
+    plot_bearings_only_tracking(
+        run_bearings_only_tracking(),
+        figure_directory / "bearings-only-tracking.png",
     )
     plot_heading_coupled_tracking(
         run_heading_coupled_tracking(),
