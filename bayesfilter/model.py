@@ -68,7 +68,7 @@ class StateTransitionModel:
             pred_mean = self.transition_func(state.mean(), delta_t_s)
             transition_func_jac = self.get_jacobian(state, delta_t_s)
             pred_cov = propagate_covariance(transition_func_jac, state.covariance())
-            cross_cov = pred_cov@transition_func_jac.T
+            cross_cov = state.covariance()@transition_func_jac.T
             return Gaussian(pred_mean, pred_cov + self.transition_noise_covariance), cross_cov
         pred_mean, pred_cov, cross_cov = propagate_gaussian_cross_cov(
             state.mean(),
@@ -81,4 +81,3 @@ class StateTransitionModel:
         if self.transition_jacobian_func is None:
             raise ValueError("Transition Jacobian function not provided")
         return self.transition_jacobian_func(state.mean(), delta_t_s)
-    
