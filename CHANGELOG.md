@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add lithium-ion battery state-of-charge and internal-resistance estimation
+  from noisy terminal-voltage and current measurements.
 - Add moving-emitter TDOA localization with hyperbolic measurement geometry,
   correlated timing noise, and joint receiver clock-bias inference.
 - Add ballistic radar tracking with log-space drag-coefficient inference.
