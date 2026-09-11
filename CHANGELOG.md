@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add moving-emitter TDOA localization with hyperbolic measurement geometry,
+  correlated timing noise, and joint receiver clock-bias inference.
 - Add ballistic radar tracking with log-space drag-coefficient inference.
 - Add low-Earth orbit determination from rotating, visibility-limited ground
   stations using range and range-rate measurements.

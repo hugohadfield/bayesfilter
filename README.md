@@ -206,6 +206,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
+| TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
@@ -281,6 +282,36 @@ geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
 ![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
+
+### TDOA emitter localization and clock calibration
+
+Five radio receivers localize a moving emitter without knowing when any pulse
+was transmitted. Subtracting the reference receiver's arrival time cancels
+the unknown emission time:
+
+```text
+Δtᵢ₁ = (‖p - sᵢ‖ - ‖p - s₁‖) / c + bᵢ.
+```
+
+Here `sᵢ` is receiver position, `c` is the speed of light, and `bᵢ` is the
+unknown clock offset of receiver `i` relative to receiver 1. The augmented
+state
+
+```text
+x = [pₓ, pᵧ, vₓ, vᵧ, b₂, b₃, b₄, b₅]
+```
+
+therefore estimates the trajectory and calibrates four clocks at once. Each
+TDOA constrains position to a hyperbola whose foci are the corresponding
+receiver pair. Their changing intersections, combined with the motion model,
+separate position from fixed clock bias.
+
+All TDOAs share the same noisy reference timestamp, so their measurement noise
+is correlated. The example constructs the complete covariance matrix rather
+than treating the four differences as independent. Both Jacobian and unscented
+filtering paths are implemented and tested.
+
+![TDOA emitter localization with receiver clock calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/tdoa-emitter-localization.png)
 
 ### Ballistic radar tracking and drag inference
 
