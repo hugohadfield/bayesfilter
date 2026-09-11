@@ -2,7 +2,7 @@
 
 BayesFilter is a Python library for Bayesian filtering and smoothing. This library provides tools for implementing Bayesian filters, Rauch-Tung-Striebel smoothers, and other related methods. The only dependency is NumPy.
 
-![Rigid-body state and inertia estimation from noisy world-space point measurements](examples/figures/readme-rigid-body-inference.png)
+![Rigid-body state and inertia estimation from noisy world-space point measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/readme-rigid-body-inference.png)
 
 ## Installation
 
@@ -115,7 +115,7 @@ smoother_states = RTS(bayes_filter).smooth(
 Use the explicit `run()` followed by `apply()` form when the corresponding
 filter timestamps are also needed.
 
-![One-dimensional constant-velocity filtering and RTS smoothing](examples/figures/constant-velocity-1d.png)
+![One-dimensional constant-velocity filtering and RTS smoothing](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-velocity-1d.png)
 
 *Noisy position measurements are filtered forward and then refined by the RTS
 smoother; velocity is inferred without being observed directly.*
@@ -248,13 +248,13 @@ Q = q [[dt³/3, dt²/2],
 
 | 1D | 2D | 3D |
 | --- | --- | --- |
-| ![Constant-velocity tracking in one dimension](examples/figures/constant-velocity-1d.png) | ![Constant-velocity tracking in two dimensions](examples/figures/constant-velocity-2d.png) | ![Constant-velocity tracking in three dimensions](examples/figures/constant-velocity-3d.png) |
+| ![Constant-velocity tracking in one dimension](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-velocity-1d.png) | ![Constant-velocity tracking in two dimensions](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-velocity-2d.png) | ![Constant-velocity tracking in three dimensions](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-velocity-3d.png) |
 
 The same position-and-velocity state can reconstruct a curved planar
 trajectory. The ellipses below show selected 95% smoothed position-confidence
 regions.
 
-![Planar trajectory reconstruction from noisy position observations](examples/figures/planar-trajectory-tracking.png)
+![Planar trajectory reconstruction from noisy position observations](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/planar-trajectory-tracking.png)
 
 ### Bearings-only target tracking
 
@@ -278,7 +278,7 @@ target motion, so the filtered uncertainty grows along the remaining bearing
 geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
-![Bearings-only target tracking with interrupted triangulation](examples/figures/bearings-only-tracking.png)
+![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
 
 ### Heading-coupled planar tracking
 
@@ -319,7 +319,7 @@ The deterministic trajectory drives forward, stops from 8–10 seconds, and
 then reverses. The default example uses unscented propagation; analytic
 Jacobians are also supplied and tested.
 
-![Heading-coupled tracking from global position and local angular-rate measurements](examples/figures/heading-coupled-tracking.png)
+![Heading-coupled tracking from global position and local angular-rate measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/heading-coupled-tracking.png)
 
 ### Constant-acceleration tracking
 
@@ -342,7 +342,7 @@ the velocity examples, noisy position is the only observed state component.
 
 | 1D | 2D | 3D |
 | --- | --- | --- |
-| ![Constant-acceleration tracking in one dimension](examples/figures/constant-acceleration-1d.png) | ![Constant-acceleration tracking in two dimensions](examples/figures/constant-acceleration-2d.png) | ![Constant-acceleration tracking in three dimensions](examples/figures/constant-acceleration-3d.png) |
+| ![Constant-acceleration tracking in one dimension](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-acceleration-1d.png) | ![Constant-acceleration tracking in two dimensions](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-acceleration-2d.png) | ![Constant-acceleration tracking in three dimensions](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/constant-acceleration-3d.png) |
 
 The current transition-model API stores one fixed process covariance. These
 examples therefore use fixed-cadence synchronous observations and construct
@@ -410,7 +410,7 @@ The known-inertia example uses `diag(1.0, 1.4, 1.8)` and the unscented filter
 and smoother. Its figure shows position tracking, geodesic attitude error,
 body angular velocity, and numerical conservation of torque-free invariants.
 
-![Rigid-body tracking with a known inertia matrix](examples/figures/rigid-body-known-inertia.png)
+![Rigid-body tracking with a known inertia matrix](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/rigid-body-known-inertia.png)
 
 #### Inferring inertia ratios in the state
 
@@ -429,7 +429,7 @@ trajectories—there are no direct angular-velocity or inertia measurements.
 The default run uses 100 point-observation sets over four seconds, making both
 the ratio convergence and posterior-uncertainty contraction visible.
 
-![Rigid-body inertia-ratio inference](examples/figures/rigid-body-inertia-estimation.png)
+![Rigid-body inertia-ratio inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/rigid-body-inertia-estimation.png)
 
 To identify absolute inertia scale, an example would need a known applied
 torque or another measurement that supplies scale information.
@@ -461,4 +461,4 @@ minimum configured in `pytest.ini`.
 
 ## License
 
-BayesFilter is distributed under the MIT License. See `licence.txt`.
+BayesFilter is distributed under the MIT License. See `LICENSE`.

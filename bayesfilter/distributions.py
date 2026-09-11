@@ -12,8 +12,8 @@ def compute_lambda(n: int, alpha: float = DEFAULT_ALPHA) -> int:
     Compute the lambda parameter for the unscented transform.
     """
     kappa = 3 - n
-    l = alpha*alpha*(n + kappa) - n
-    return l
+    lambda_ = alpha*alpha*(n + kappa) - n
+    return lambda_
 
 
 def compute_covariance_mean_weight(
@@ -160,4 +160,3 @@ class Gaussian(Distribution):
 
     def __repr__(self):
         return f'Gaussian(mean={self.mean()}, covariance={self.covariance()})'
-    

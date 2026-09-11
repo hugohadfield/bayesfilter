@@ -1,0 +1,7 @@
+include CHANGELOG.md
+include LICENSE
+include README.md
+include pytest.ini
+recursive-include bayesfilter *.py
+recursive-include examples *.png *.py *.txt
+recursive-include tests *.py
