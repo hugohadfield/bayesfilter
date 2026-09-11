@@ -984,3 +984,339 @@ def plot_readme_inertia_summary(result, output_path, show=False):
     if show:
         plt.show()
     plt.close(figure)
+
+
+def plot_ballistic_tracking(result, output_path, show=False):
+    """Plot radar geometry, trajectory recovery, and drag inference."""
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+    measurements = result["measurements"]
+    radar_position = result["radar_position"]
+    measured_positions = radar_position + measurements[:, :1] * np.column_stack(
+        (np.cos(measurements[:, 1]), np.sin(measurements[:, 1]))
+    )
+
+    figure = plt.figure(figsize=(11.2, 7.4))
+    axes = figure.subplot_mosaic(
+        [["trajectory", "altitude"], ["trajectory", "drag"]],
+        width_ratios=(1.2, 1.0),
+    )
+    trajectory_axis = axes["trajectory"]
+    altitude_axis = axes["altitude"]
+    drag_axis = axes["drag"]
+
+    trajectory_axis.scatter(
+        measured_positions[:, 0],
+        measured_positions[:, 1],
+        s=8,
+        alpha=0.22,
+        color=COLORS["measurement"],
+        edgecolors="none",
+        label="Radar measurements",
+    )
+    for ray_number, measurement_index in enumerate(
+        np.linspace(0, len(measurements) - 1, 9, dtype=int)
+    ):
+        measured_position = measured_positions[measurement_index]
+        trajectory_axis.plot(
+            [radar_position[0], measured_position[0]],
+            [radar_position[1], measured_position[1]],
+            color="#888888",
+            alpha=0.16,
+            linewidth=0.8,
+            label="Selected radar rays" if ray_number == 0 else None,
+        )
+    trajectory_axis.scatter(
+        radar_position[0],
+        radar_position[1],
+        marker="^",
+        s=85,
+        color="#0072B2",
+        edgecolor="white",
+        linewidth=0.8,
+        zorder=7,
+        label="Radar",
+    )
+    trajectory_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True trajectory",
+    )
+    trajectory_axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    trajectory_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    trajectory_axis.set_title("Range/elevation geometry")
+    trajectory_axis.set_xlabel("Downrange [km]")
+    trajectory_axis.set_ylabel("Altitude [km]")
+    trajectory_axis.set_ylim(
+        -1.0,
+        max(measured_positions[:, 1].max(), truth[:, 1].max()) + 1.0,
+    )
+    trajectory_axis.legend(fontsize=8, loc="best")
+
+    altitude_axis.plot(
+        times,
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True altitude",
+    )
+    altitude_axis.plot(
+        times,
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    altitude_axis.plot(
+        times,
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    altitude_axis.set_title(
+        "Altitude reconstruction — position RMSE "
+        f"{result['filtered_position_rmse']:.3f} → "
+        f"{result['smoothed_position_rmse']:.3f} km"
+    )
+    altitude_axis.set_xlabel("Time [s]")
+    altitude_axis.set_ylabel("Altitude [km]")
+    altitude_axis.legend(fontsize=8)
+
+    true_drag = result["true_drag_coefficient"]
+    filtered_drag = result["filtered_drag_coefficient"]
+    smoothed_drag = result["smoothed_drag_coefficient"]
+    log_drag_std = np.sqrt(result["filtered_covariances"][:, 4, 4])
+    drag_axis.fill_between(
+        times,
+        filtered_drag * np.exp(-2.0 * log_drag_std),
+        filtered_drag * np.exp(2.0 * log_drag_std),
+        color=COLORS["filter"],
+        alpha=0.14,
+        linewidth=0,
+        label="Filtered 95% interval",
+    )
+    drag_axis.plot(
+        times,
+        filtered_drag,
+        color=COLORS["filter"],
+        label="Filtered estimate",
+    )
+    drag_axis.plot(
+        times,
+        smoothed_drag,
+        color=COLORS["smoother"],
+        label="RTS smoothed estimate",
+    )
+    drag_axis.axhline(
+        true_drag,
+        color=COLORS["truth"],
+        linestyle="--",
+        label=f"True coefficient ({true_drag:.3f})",
+    )
+    drag_axis.set_title("Effective drag-coefficient inference")
+    drag_axis.set_xlabel("Time [s]")
+    drag_axis.set_ylabel("Drag coefficient [1/km]")
+    drag_axis.legend(fontsize=8)
+
+    figure.suptitle(
+        "Ballistic radar tracking with aerodynamic parameter inference",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)
+
+
+def plot_orbit_determination(result, output_path, show=False):
+    """Plot orbit geometry, errors, and ground-station visibility."""
+    from matplotlib.patches import Circle
+
+    from examples.orbit_determination import EARTH_RADIUS_KM
+
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+
+    figure, axes = plt.subplots(2, 2, figsize=(10.8, 8.3))
+    geometry_axis, altitude_axis, error_axis, uncertainty_axis = axes.flat
+    geometry_axis.add_patch(
+        Circle(
+            (0.0, 0.0),
+            EARTH_RADIUS_KM,
+            facecolor="#E8EEF3",
+            edgecolor="#607D8B",
+            linewidth=1.2,
+            zorder=0,
+            label="Earth",
+        )
+    )
+    station_colors = ("#0072B2", "#009E73", "#CC79A7", "#E69F00")
+    initial_stations = result["station_positions"][0]
+    geometry_axis.scatter(
+        initial_stations[:, 0],
+        initial_stations[:, 1],
+        marker="^",
+        s=30,
+        color="#607D8B",
+        edgecolor="white",
+        linewidth=0.5,
+        label="Ground stations at start",
+        zorder=6,
+    )
+    for ray_number, observation_index in enumerate(
+        np.linspace(0, len(result["visible_station_indices"]) - 1, 12, dtype=int)
+    ):
+        station_index = result["visible_station_indices"][observation_index][0]
+        station_position = result["station_positions"][observation_index, station_index]
+        target_position = truth[observation_index + 1, :2]
+        geometry_axis.plot(
+            [station_position[0], target_position[0]],
+            [station_position[1], target_position[1]],
+            color=station_colors[ray_number % len(station_colors)],
+            alpha=0.20,
+            linewidth=0.8,
+            label="Visible tracking passes" if ray_number == 0 else None,
+            zorder=1,
+        )
+    geometry_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True orbit",
+        zorder=3,
+    )
+    geometry_axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.70,
+        label="Filtered",
+        zorder=4,
+    )
+    geometry_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+        zorder=5,
+    )
+    geometry_axis.set_title("Rotating-station observation geometry")
+    geometry_axis.set_xlabel("Inertial x [km]")
+    geometry_axis.set_ylabel("Inertial y [km]")
+    geometry_axis.set_aspect("equal", adjustable="box")
+    geometry_axis.legend(fontsize=7, loc="upper right")
+
+    truth_altitude = np.linalg.norm(truth[:, :2], axis=1) - EARTH_RADIUS_KM
+    filtered_altitude = np.linalg.norm(filtered[:, :2], axis=1) - EARTH_RADIUS_KM
+    smoothed_altitude = np.linalg.norm(smoothed[:, :2], axis=1) - EARTH_RADIUS_KM
+    altitude_axis.plot(
+        times / 60.0,
+        truth_altitude,
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True",
+    )
+    altitude_axis.plot(
+        times / 60.0,
+        filtered_altitude,
+        color=COLORS["filter"],
+        alpha=0.70,
+        label="Filtered",
+    )
+    altitude_axis.plot(
+        times / 60.0,
+        smoothed_altitude,
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    altitude_axis.set_title("Recovered orbital altitude")
+    altitude_axis.set_xlabel("Time [min]")
+    altitude_axis.set_ylabel("Altitude [km]")
+    altitude_axis.legend(fontsize=8)
+
+    filtered_error = np.linalg.norm(filtered[:, :2] - truth[:, :2], axis=1)
+    smoothed_error = np.linalg.norm(smoothed[:, :2] - truth[:, :2], axis=1)
+    error_axis.semilogy(
+        times / 60.0,
+        filtered_error,
+        color=COLORS["filter"],
+        label=f"Filtered (RMSE {result['filtered_position_rmse']:.2f} km)",
+    )
+    error_axis.semilogy(
+        times / 60.0,
+        smoothed_error,
+        color=COLORS["smoother"],
+        label=f"RTS smoothed (RMSE {result['smoothed_position_rmse']:.2f} km)",
+    )
+    error_axis.set_title("Position error over the tracking arc")
+    error_axis.set_xlabel("Time [min]")
+    error_axis.set_ylabel("Euclidean error [km]")
+    error_axis.legend(fontsize=8)
+
+    major_position_std = np.array(
+        [
+            np.sqrt(np.linalg.eigvalsh(covariance[:2, :2]).max())
+            for covariance in result["filtered_covariances"]
+        ]
+    )
+    visible_counts = np.array(
+        [len(indices) for indices in result["visible_station_indices"]]
+    )
+    uncertainty_axis.semilogy(
+        times / 60.0,
+        major_position_std,
+        color=COLORS["filter"],
+        label="Filtered major-axis σ",
+    )
+    visibility_axis = uncertainty_axis.twinx()
+    visibility_axis.step(
+        times[1:] / 60.0,
+        visible_counts,
+        where="post",
+        color="#009E73",
+        alpha=0.55,
+        label="Visible stations",
+    )
+    uncertainty_axis.set_title("Uncertainty and station visibility")
+    uncertainty_axis.set_xlabel("Time [min]")
+    uncertainty_axis.set_ylabel("Position σ [km]")
+    visibility_axis.set_ylabel("Visible stations")
+    visibility_axis.set_yticks(np.arange(visible_counts.max() + 1))
+    lines, labels = uncertainty_axis.get_legend_handles_labels()
+    extra_lines, extra_labels = visibility_axis.get_legend_handles_labels()
+    uncertainty_axis.legend(lines + extra_lines, labels + extra_labels, fontsize=8)
+
+    figure.suptitle(
+        "Low-Earth orbit determination from range and range rate",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)

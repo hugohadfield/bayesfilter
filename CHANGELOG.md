@@ -2,6 +2,14 @@
 
 Notable changes to BayesFilter are recorded here.
 
+## Unreleased
+
+### Added
+
+- Add ballistic radar tracking with log-space drag-coefficient inference.
+- Add low-Earth orbit determination from rotating, visibility-limited ground
+  stations using range and range-rate measurements.
+
 ## 0.1.0 - 2026-09-10
 
 ### Fixed
