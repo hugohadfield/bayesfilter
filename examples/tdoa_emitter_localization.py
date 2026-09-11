@@ -183,7 +183,7 @@ def run_tdoa_emitter_localization(
 
 
 if __name__ == "__main__":
-    from examples.plotting import plot_tdoa_emitter_localization
+    from examples.tdoa_plotting import plot_tdoa_emitter_localization
 
     result = run_tdoa_emitter_localization()
     path = Path(__file__).parent / "figures" / "tdoa-emitter-localization.png"

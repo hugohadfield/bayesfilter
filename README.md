@@ -207,6 +207,8 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
 | TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
+| Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
+| Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -310,6 +312,63 @@ than treating the four differences as independent. Both Jacobian and unscented
 filtering paths are implemented and tested.
 
 ![TDOA emitter localization with receiver clock calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/tdoa-emitter-localization.png)
+
+### Ballistic radar tracking and drag inference
+
+This example tracks a ballistic object in a two-dimensional exponential
+atmosphere while jointly estimating an unknown effective drag coefficient. The
+augmented state is
+
+```text
+x = [rₓ, h, vₓ, vₕ, log(c_d)].
+```
+
+Using log drag keeps the inferred coefficient positive. Gravity and
+aerodynamic deceleration follow
+
+```text
+ρ(h) / ρ₀ = exp(-h / H)
+v̇ = [0, -g] - c_d exp(-h / H) ‖v‖ v.
+```
+
+A ground radar observes noisy slant range and elevation, but neither velocity
+nor drag directly:
+
+```text
+z = [√(rₓ² + h²), atan2(h, rₓ)] + noise.
+```
+
+The coefficient becomes observable through accumulated curvature and
+deceleration. RTS smoothing uses the complete radar arc to improve the early
+trajectory and parameter estimate.
+
+![Ballistic radar tracking with drag-coefficient inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/ballistic-drag-estimation.png)
+
+### Orbit determination from rotating ground stations
+
+The orbit example propagates a planar low-Earth satellite under two-body
+gravity in an inertial frame:
+
+```text
+x = [r, v]
+ṙ = v
+v̇ = -μ r / ‖r‖³.
+```
+
+Eight equatorial stations rotate with Earth. A station contributes an
+observation only while the satellite is above its local horizon. Each visible
+station measures nonlinear range and range rate:
+
+```text
+ρ  = ‖r - sᵢ(t)‖
+ρ̇ = (r - sᵢ(t)) · (v - ṡᵢ(t)) / ρ.
+```
+
+The unscented filter recovers position and velocity from the changing station
+geometry, while the RTS pass reconstructs a consistent orbit over the full
+90-minute tracking arc.
+
+![Orbit determination from rotating ground stations](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/orbit-determination.png)
 
 ### Heading-coupled planar tracking
 

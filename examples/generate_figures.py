@@ -2,24 +2,28 @@
 
 from pathlib import Path
 
+from examples.ballistic_tracking import run_ballistic_tracking
 from examples.bearings_only import run_bearings_only_tracking
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.plotting import (
+    plot_ballistic_tracking,
     plot_bearings_only_tracking,
     plot_heading_coupled_tracking,
     plot_inertia_estimation,
+    plot_orbit_determination,
     plot_planar_tracking,
     plot_readme_inertia_summary,
     plot_rigid_body_tracking,
-    plot_tdoa_emitter_localization,
     run_and_plot_linear_example,
 )
+from examples.orbit_determination import run_orbit_determination
 from examples.rigid_body import (
     run_inertia_estimation_rigid_body,
     run_known_inertia_rigid_body,
 )
 from examples.tdoa_emitter_localization import run_tdoa_emitter_localization
+from examples.tdoa_plotting import plot_tdoa_emitter_localization
 
 
 def main():
@@ -42,6 +46,14 @@ def main():
     plot_bearings_only_tracking(
         run_bearings_only_tracking(),
         figure_directory / "bearings-only-tracking.png",
+    )
+    plot_ballistic_tracking(
+        run_ballistic_tracking(),
+        figure_directory / "ballistic-drag-estimation.png",
+    )
+    plot_orbit_determination(
+        run_orbit_determination(),
+        figure_directory / "orbit-determination.png",
     )
     plot_heading_coupled_tracking(
         run_heading_coupled_tracking(),

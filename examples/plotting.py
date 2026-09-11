@@ -986,106 +986,227 @@ def plot_readme_inertia_summary(result, output_path, show=False):
     plt.close(figure)
 
 
-def plot_tdoa_emitter_localization(result, output_path, show=False):
-    """Plot TDOA hyperbolas, trajectory recovery, and clock calibration."""
-    from matplotlib.lines import Line2D
+def plot_ballistic_tracking(result, output_path, show=False):
+    """Plot radar geometry, trajectory recovery, and drag inference."""
+    plt = _pyplot()
+    times = result["times"]
+    truth = result["truth"]
+    filtered = result["filtered"]
+    smoothed = result["smoothed"]
+    measurements = result["measurements"]
+    radar_position = result["radar_position"]
+    measured_positions = radar_position + measurements[:, :1] * np.column_stack(
+        (np.cos(measurements[:, 1]), np.sin(measurements[:, 1]))
+    )
 
-    from examples.tdoa_emitter_localization import MICROSECONDS_PER_KM
+    figure = plt.figure(figsize=(11.2, 7.4))
+    axes = figure.subplot_mosaic(
+        [["trajectory", "altitude"], ["trajectory", "drag"]],
+        width_ratios=(1.2, 1.0),
+    )
+    trajectory_axis = axes["trajectory"]
+    altitude_axis = axes["altitude"]
+    drag_axis = axes["drag"]
+
+    trajectory_axis.scatter(
+        measured_positions[:, 0],
+        measured_positions[:, 1],
+        s=8,
+        alpha=0.22,
+        color=COLORS["measurement"],
+        edgecolors="none",
+        label="Radar measurements",
+    )
+    for ray_number, measurement_index in enumerate(
+        np.linspace(0, len(measurements) - 1, 9, dtype=int)
+    ):
+        measured_position = measured_positions[measurement_index]
+        trajectory_axis.plot(
+            [radar_position[0], measured_position[0]],
+            [radar_position[1], measured_position[1]],
+            color="#888888",
+            alpha=0.16,
+            linewidth=0.8,
+            label="Selected radar rays" if ray_number == 0 else None,
+        )
+    trajectory_axis.scatter(
+        radar_position[0],
+        radar_position[1],
+        marker="^",
+        s=85,
+        color="#0072B2",
+        edgecolor="white",
+        linewidth=0.8,
+        zorder=7,
+        label="Radar",
+    )
+    trajectory_axis.plot(
+        truth[:, 0],
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True trajectory",
+    )
+    trajectory_axis.plot(
+        filtered[:, 0],
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    trajectory_axis.plot(
+        smoothed[:, 0],
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    trajectory_axis.set_title("Range/elevation geometry")
+    trajectory_axis.set_xlabel("Downrange [km]")
+    trajectory_axis.set_ylabel("Altitude [km]")
+    trajectory_axis.set_ylim(
+        -1.0,
+        max(measured_positions[:, 1].max(), truth[:, 1].max()) + 1.0,
+    )
+    trajectory_axis.legend(fontsize=8, loc="best")
+
+    altitude_axis.plot(
+        times,
+        truth[:, 1],
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True altitude",
+    )
+    altitude_axis.plot(
+        times,
+        filtered[:, 1],
+        color=COLORS["filter"],
+        alpha=0.75,
+        label="Filtered",
+    )
+    altitude_axis.plot(
+        times,
+        smoothed[:, 1],
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    altitude_axis.set_title(
+        "Altitude reconstruction — position RMSE "
+        f"{result['filtered_position_rmse']:.3f} → "
+        f"{result['smoothed_position_rmse']:.3f} km"
+    )
+    altitude_axis.set_xlabel("Time [s]")
+    altitude_axis.set_ylabel("Altitude [km]")
+    altitude_axis.legend(fontsize=8)
+
+    true_drag = result["true_drag_coefficient"]
+    filtered_drag = result["filtered_drag_coefficient"]
+    smoothed_drag = result["smoothed_drag_coefficient"]
+    log_drag_std = np.sqrt(result["filtered_covariances"][:, 4, 4])
+    drag_axis.fill_between(
+        times,
+        filtered_drag * np.exp(-2.0 * log_drag_std),
+        filtered_drag * np.exp(2.0 * log_drag_std),
+        color=COLORS["filter"],
+        alpha=0.14,
+        linewidth=0,
+        label="Filtered 95% interval",
+    )
+    drag_axis.plot(
+        times,
+        filtered_drag,
+        color=COLORS["filter"],
+        label="Filtered estimate",
+    )
+    drag_axis.plot(
+        times,
+        smoothed_drag,
+        color=COLORS["smoother"],
+        label="RTS smoothed estimate",
+    )
+    drag_axis.axhline(
+        true_drag,
+        color=COLORS["truth"],
+        linestyle="--",
+        label=f"True coefficient ({true_drag:.3f})",
+    )
+    drag_axis.set_title("Effective drag-coefficient inference")
+    drag_axis.set_xlabel("Time [s]")
+    drag_axis.set_ylabel("Drag coefficient [1/km]")
+    drag_axis.legend(fontsize=8)
+
+    figure.suptitle(
+        "Ballistic radar tracking with aerodynamic parameter inference",
+        fontsize=14,
+    )
+    figure.tight_layout()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=170, bbox_inches="tight", facecolor="white")
+    if show:
+        plt.show()
+    plt.close(figure)
+
+
+def plot_orbit_determination(result, output_path, show=False):
+    """Plot orbit geometry, errors, and ground-station visibility."""
+    from matplotlib.patches import Circle
+
+    from examples.orbit_determination import EARTH_RADIUS_KM
 
     plt = _pyplot()
     times = result["times"]
     truth = result["truth"]
     filtered = result["filtered"]
     smoothed = result["smoothed"]
-    receiver_positions = result["receiver_positions"]
-    receiver_colors = ("#0072B2", "#D55E00", "#009E73", "#CC79A7")
 
-    figure = plt.figure(figsize=(11.2, 7.5))
-    axes = figure.subplot_mosaic(
-        [["geometry", "error"], ["geometry", "bias"]],
-        width_ratios=(1.2, 1.0),
+    figure, axes = plt.subplots(2, 2, figsize=(10.8, 8.3))
+    geometry_axis, altitude_axis, error_axis, uncertainty_axis = axes.flat
+    geometry_axis.add_patch(
+        Circle(
+            (0.0, 0.0),
+            EARTH_RADIUS_KM,
+            facecolor="#E8EEF3",
+            edgecolor="#607D8B",
+            linewidth=1.2,
+            zorder=0,
+            label="Earth",
+        )
     )
-    geometry_axis = axes["geometry"]
-    error_axis = axes["error"]
-    bias_axis = axes["bias"]
-
-    selected_state_index = np.abs(times - 100.0).argmin()
-    selected_measurement_index = selected_state_index - 1
-    corrected_measurement = (
-        result["measurements"][selected_measurement_index]
-        - smoothed[selected_state_index, 4:]
-    )
-    x_coordinates = np.linspace(-15.0, 15.0, 320)
-    y_coordinates = np.linspace(-14.0, 14.0, 300)
-    grid_x, grid_y = np.meshgrid(x_coordinates, y_coordinates)
-    reference_range = np.hypot(
-        grid_x - receiver_positions[0, 0],
-        grid_y - receiver_positions[0, 1],
-    )
-    hyperbola_handles = []
-    for receiver_index, color in enumerate(receiver_colors, start=1):
-        receiver_range = np.hypot(
-            grid_x - receiver_positions[receiver_index, 0],
-            grid_y - receiver_positions[receiver_index, 1],
-        )
-        range_difference_us = MICROSECONDS_PER_KM * (
-            receiver_range - reference_range
-        )
-        geometry_axis.contour(
-            grid_x,
-            grid_y,
-            range_difference_us,
-            levels=[corrected_measurement[receiver_index - 1]],
-            colors=[color],
-            linewidths=1.1,
-            alpha=0.60,
-        )
-        hyperbola_handles.append(
-            Line2D(
-                [0],
-                [0],
-                color=color,
-                linewidth=1.1,
-                label=f"R{receiver_index + 1} − R1 hyperbola",
-            )
-        )
-
+    station_colors = ("#0072B2", "#009E73", "#CC79A7", "#E69F00")
+    initial_stations = result["station_positions"][0]
     geometry_axis.scatter(
-        receiver_positions[1:, 0],
-        receiver_positions[1:, 1],
+        initial_stations[:, 0],
+        initial_stations[:, 1],
         marker="^",
-        s=60,
-        color=receiver_colors,
+        s=30,
+        color="#607D8B",
         edgecolor="white",
-        linewidth=0.7,
-        zorder=7,
+        linewidth=0.5,
+        label="Ground stations at start",
+        zorder=6,
     )
-    geometry_axis.scatter(
-        receiver_positions[0, 0],
-        receiver_positions[0, 1],
-        marker="*",
-        s=150,
-        color="#222222",
-        edgecolor="white",
-        linewidth=0.7,
-        zorder=8,
-        label="Reference receiver R1",
-    )
-    for receiver_index, position in enumerate(receiver_positions):
-        geometry_axis.annotate(
-            f"R{receiver_index + 1}",
-            position,
-            xytext=(5, 5),
-            textcoords="offset points",
-            fontsize=8,
+    for ray_number, observation_index in enumerate(
+        np.linspace(0, len(result["visible_station_indices"]) - 1, 12, dtype=int)
+    ):
+        station_index = result["visible_station_indices"][observation_index][0]
+        station_position = result["station_positions"][observation_index, station_index]
+        target_position = truth[observation_index + 1, :2]
+        geometry_axis.plot(
+            [station_position[0], target_position[0]],
+            [station_position[1], target_position[1]],
+            color=station_colors[ray_number % len(station_colors)],
+            alpha=0.20,
+            linewidth=0.8,
+            label="Visible tracking passes" if ray_number == 0 else None,
+            zorder=1,
         )
     geometry_axis.plot(
         truth[:, 0],
         truth[:, 1],
         color=COLORS["truth"],
         linestyle="--",
-        label="True emitter",
-        zorder=4,
+        label="True orbit",
+        zorder=3,
     )
     geometry_axis.plot(
         filtered[:, 0],
@@ -1093,97 +1214,103 @@ def plot_tdoa_emitter_localization(result, output_path, show=False):
         color=COLORS["filter"],
         alpha=0.70,
         label="Filtered",
-        zorder=5,
+        zorder=4,
     )
     geometry_axis.plot(
         smoothed[:, 0],
         smoothed[:, 1],
         color=COLORS["smoother"],
         label="RTS smoothed",
-        zorder=6,
+        zorder=5,
     )
-    for ellipse_time in (0.0, 20.0, 60.0, 120.0, 180.0):
-        state_index = np.abs(times - ellipse_time).argmin()
-        _add_covariance_ellipse(
-            geometry_axis,
-            filtered[state_index, :2],
-            result["filtered_covariances"][state_index, :2, :2],
-            COLORS["filter"],
-        )
-    geometry_axis.scatter(
-        truth[selected_state_index, 0],
-        truth[selected_state_index, 1],
-        marker="o",
-        s=45,
-        facecolor="white",
-        edgecolor=COLORS["truth"],
-        linewidth=1.3,
-        zorder=8,
-        label="Hyperbola epoch",
-    )
-    geometry_axis.set_title("Receiver geometry and one TDOA epoch")
-    geometry_axis.set_xlabel("World x [km]")
-    geometry_axis.set_ylabel("World y [km]")
+    geometry_axis.set_title("Rotating-station observation geometry")
+    geometry_axis.set_xlabel("Inertial x [km]")
+    geometry_axis.set_ylabel("Inertial y [km]")
     geometry_axis.set_aspect("equal", adjustable="box")
-    geometry_axis.set_xlim(-15.0, 15.0)
-    geometry_axis.set_ylim(-14.0, 14.0)
-    handles, labels = geometry_axis.get_legend_handles_labels()
-    geometry_axis.legend(
-        hyperbola_handles + handles,
-        [handle.get_label() for handle in hyperbola_handles] + labels,
-        fontsize=7,
-        ncol=2,
-        loc="upper center",
+    geometry_axis.legend(fontsize=7, loc="upper right")
+
+    truth_altitude = np.linalg.norm(truth[:, :2], axis=1) - EARTH_RADIUS_KM
+    filtered_altitude = np.linalg.norm(filtered[:, :2], axis=1) - EARTH_RADIUS_KM
+    smoothed_altitude = np.linalg.norm(smoothed[:, :2], axis=1) - EARTH_RADIUS_KM
+    altitude_axis.plot(
+        times / 60.0,
+        truth_altitude,
+        color=COLORS["truth"],
+        linestyle="--",
+        label="True",
     )
+    altitude_axis.plot(
+        times / 60.0,
+        filtered_altitude,
+        color=COLORS["filter"],
+        alpha=0.70,
+        label="Filtered",
+    )
+    altitude_axis.plot(
+        times / 60.0,
+        smoothed_altitude,
+        color=COLORS["smoother"],
+        label="RTS smoothed",
+    )
+    altitude_axis.set_title("Recovered orbital altitude")
+    altitude_axis.set_xlabel("Time [min]")
+    altitude_axis.set_ylabel("Altitude [km]")
+    altitude_axis.legend(fontsize=8)
 
     filtered_error = np.linalg.norm(filtered[:, :2] - truth[:, :2], axis=1)
     smoothed_error = np.linalg.norm(smoothed[:, :2] - truth[:, :2], axis=1)
     error_axis.semilogy(
-        times,
+        times / 60.0,
         filtered_error,
         color=COLORS["filter"],
-        label=f"Filtered (RMSE {result['filtered_position_rmse']:.3f} km)",
+        label=f"Filtered (RMSE {result['filtered_position_rmse']:.2f} km)",
     )
     error_axis.semilogy(
-        times,
+        times / 60.0,
         smoothed_error,
         color=COLORS["smoother"],
-        label=f"RTS smoothed (RMSE {result['smoothed_position_rmse']:.3f} km)",
+        label=f"RTS smoothed (RMSE {result['smoothed_position_rmse']:.2f} km)",
     )
-    error_axis.set_title("Emitter position error")
-    error_axis.set_xlabel("Time [s]")
+    error_axis.set_title("Position error over the tracking arc")
+    error_axis.set_xlabel("Time [min]")
     error_axis.set_ylabel("Euclidean error [km]")
     error_axis.legend(fontsize=8)
 
-    for bias_index, color in enumerate(receiver_colors):
-        bias_axis.plot(
-            times,
-            filtered[:, 4 + bias_index],
-            color=color,
-            alpha=0.25,
-            linewidth=1.0,
-        )
-        bias_axis.plot(
-            times,
-            smoothed[:, 4 + bias_index],
-            color=color,
-            label=f"R{bias_index + 2} − R1",
-        )
-        bias_axis.axhline(
-            result["true_clock_biases_us"][bias_index],
-            color=color,
-            linestyle="--",
-            linewidth=1.0,
-            alpha=0.75,
-        )
-    bias_axis.set_title("Clock-bias inference (solid smoothed, dashed truth)")
-    bias_axis.set_xlabel("Time [s]")
-    bias_axis.set_ylabel("Relative clock bias [μs]")
-    bias_axis.legend(fontsize=8, ncol=2)
+    major_position_std = np.array(
+        [
+            np.sqrt(np.linalg.eigvalsh(covariance[:2, :2]).max())
+            for covariance in result["filtered_covariances"]
+        ]
+    )
+    visible_counts = np.array(
+        [len(indices) for indices in result["visible_station_indices"]]
+    )
+    uncertainty_axis.semilogy(
+        times / 60.0,
+        major_position_std,
+        color=COLORS["filter"],
+        label="Filtered major-axis σ",
+    )
+    visibility_axis = uncertainty_axis.twinx()
+    visibility_axis.step(
+        times[1:] / 60.0,
+        visible_counts,
+        where="post",
+        color="#009E73",
+        alpha=0.55,
+        label="Visible stations",
+    )
+    uncertainty_axis.set_title("Uncertainty and station visibility")
+    uncertainty_axis.set_xlabel("Time [min]")
+    uncertainty_axis.set_ylabel("Position σ [km]")
+    visibility_axis.set_ylabel("Visible stations")
+    visibility_axis.set_yticks(np.arange(visible_counts.max() + 1))
+    lines, labels = uncertainty_axis.get_legend_handles_labels()
+    extra_lines, extra_labels = visibility_axis.get_legend_handles_labels()
+    uncertainty_axis.legend(lines + extra_lines, labels + extra_labels, fontsize=8)
 
-    mode = "Jacobian" if result["use_jacobian"] else "Unscented"
     figure.suptitle(
-        f"{mode} TDOA localization with receiver clock calibration",
+        "Low-Earth orbit determination from range and range rate",
         fontsize=14,
     )
     figure.tight_layout()
