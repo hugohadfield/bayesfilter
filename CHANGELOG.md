@@ -2,6 +2,13 @@
 
 Notable changes to BayesFilter are recorded here.
 
+## Unreleased
+
+### Added
+
+- Add moving-emitter TDOA localization with hyperbolic measurement geometry,
+  correlated timing noise, and joint receiver clock-bias inference.
+
 ## 0.1.0 - 2026-09-10
 
 ### Fixed

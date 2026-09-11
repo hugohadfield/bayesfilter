@@ -12,12 +12,14 @@ from examples.plotting import (
     plot_planar_tracking,
     plot_readme_inertia_summary,
     plot_rigid_body_tracking,
+    plot_tdoa_emitter_localization,
     run_and_plot_linear_example,
 )
 from examples.rigid_body import (
     run_inertia_estimation_rigid_body,
     run_known_inertia_rigid_body,
 )
+from examples.tdoa_emitter_localization import run_tdoa_emitter_localization
 
 
 def main():
@@ -44,6 +46,10 @@ def main():
     plot_heading_coupled_tracking(
         run_heading_coupled_tracking(),
         figure_directory / "heading-coupled-tracking.png",
+    )
+    plot_tdoa_emitter_localization(
+        run_tdoa_emitter_localization(),
+        figure_directory / "tdoa-emitter-localization.png",
     )
 
     plot_rigid_body_tracking(
