@@ -1,37 +1,45 @@
+from pathlib import Path
 
 from setuptools import setup
-import os
 
-here = os.path.abspath(os.path.dirname(__file__))
-exec(open(os.path.join(here, 'bayesfilter/version.py')).read())
+
+here = Path(__file__).parent.resolve()
+version = {}
+exec((here / "bayesfilter" / "version.py").read_text(encoding="utf-8"), version)
 
 
 setup(
-    name='bayesfilter',
-    version=__version__,
-    packages=['bayesfilter'],
+    name="bayesfilter",
+    version=version["__version__"],
+    packages=["bayesfilter"],
     install_requires=[
-        'numpy',
+        "numpy>=1.21.3",
     ],
     extras_require={
-        'test': [
-            'pytest>=7',
-            'pytest-cov>=4',
+        "test": [
+            "pytest>=7",
+            "pytest-cov>=4",
         ],
     },
-    license='MIT',
-    author='Hugo Hadfield',
+    license="MIT",
+    license_files=["LICENSE"],
+    author="Hugo Hadfield",
     author_email="hadfield.hugo@gmail.com",
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
+    long_description=(here / "README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
     description="A pure Python/NumPy library for Bayesian filtering and smoothing",
     url="https://github.com/hugohadfield/bayesfilter",
-    python_requires='>=3.6',
+    project_urls={
+        "Changelog": "https://github.com/hugohadfield/bayesfilter/blob/main/CHANGELOG.md",
+        "Issues": "https://github.com/hugohadfield/bayesfilter/issues",
+        "Source": "https://github.com/hugohadfield/bayesfilter",
+    },
+    python_requires=">=3.10",
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Topic :: Scientific/Engineering :: Mathematics',
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering :: Mathematics",
     ],
 )
