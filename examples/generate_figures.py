@@ -6,6 +6,8 @@ from examples.ballistic_tracking import run_ballistic_tracking
 from examples.battery_plotting import plot_battery_state_of_charge
 from examples.battery_state_of_charge import run_battery_state_of_charge
 from examples.bearings_only import run_bearings_only_tracking
+from examples.boat_navigation import run_boat_navigation
+from examples.boat_plotting import plot_boat_navigation
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
@@ -74,6 +76,10 @@ def main():
     plot_known_correspondence_slam(
         run_known_correspondence_slam(),
         figure_directory / "known-correspondence-slam.png",
+    )
+    plot_boat_navigation(
+        run_boat_navigation(),
+        figure_directory / "boat-navigation.png",
     )
 
     plot_rigid_body_tracking(
