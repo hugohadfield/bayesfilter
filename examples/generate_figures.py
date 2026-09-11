@@ -3,6 +3,8 @@
 from pathlib import Path
 
 from examples.ballistic_tracking import run_ballistic_tracking
+from examples.battery_plotting import plot_battery_state_of_charge
+from examples.battery_state_of_charge import run_battery_state_of_charge
 from examples.bearings_only import run_bearings_only_tracking
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
@@ -64,6 +66,10 @@ def main():
     plot_tdoa_emitter_localization(
         run_tdoa_emitter_localization(),
         figure_directory / "tdoa-emitter-localization.png",
+    )
+    plot_battery_state_of_charge(
+        run_battery_state_of_charge(),
+        figure_directory / "battery-state-of-charge.png",
     )
     plot_known_correspondence_slam(
         run_known_correspondence_slam(),

@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add lithium-ion battery state-of-charge and internal-resistance estimation
+  from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
   observations, loop closure, and joint trajectory/map smoothing.
 - Add moving-emitter TDOA localization with hyperbolic measurement geometry,

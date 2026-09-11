@@ -210,6 +210,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
+| Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -411,6 +412,43 @@ then reverses. The default example uses unscented propagation; analytic
 Jacobians are also supplied and tested.
 
 ![Heading-coupled tracking from global position and local angular-rate measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/heading-coupled-tracking.png)
+
+### Battery state-of-charge and resistance estimation
+
+This example uses a first-order Thevenin equivalent circuit to infer a
+lithium-ion cell's state of charge and ohmic internal resistance. The state is
+
+```text
+x = [q, vₚ, log(R₀), I],
+```
+
+where `q` is fractional charge, `vₚ` is the voltage across a polarization RC
+branch, and `I` is positive during discharge. Resistance is represented in log
+space so its estimate remains positive. For cell capacity `Q`, polarization
+resistance `R₁`, and time constant `τ`, the discrete transition is
+
+```text
+q'  = q - dt I / (3600 Q)
+vₚ' = exp(-dt/τ) vₚ + R₁ (1 - exp(-dt/τ)) I.
+```
+
+The available sensors measure noisy terminal voltage and noisy load current:
+
+```text
+V_terminal = OCV(q) - vₚ - R₀ I
+z = [V_terminal, I] + noise.
+```
+
+The nonlinear open-circuit-voltage curve makes charge observable, while the
+repeating discharge, pulse-load, rest, and regenerative portions of the drive
+cycle excite the instantaneous voltage drop needed to identify `R₀`. The
+filter starts with deliberately biased charge and resistance estimates. RTS
+smoothing then uses the entire one-hour experiment to reconstruct the early
+charge state and resistance. The default uses unscented propagation, and
+analytic Jacobians are included and tested for extended filtering and
+smoothing as well.
+
+![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
 
 ### Known-correspondence landmark SLAM
 
