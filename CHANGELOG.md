@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add known-correspondence landmark SLAM with noisy odometry, range/bearing
+  observations, loop closure, and joint trajectory/map smoothing.
 - Add moving-emitter TDOA localization with hyperbolic measurement geometry,
   correlated timing noise, and joint receiver clock-bias inference.
 - Add ballistic radar tracking with log-space drag-coefficient inference.

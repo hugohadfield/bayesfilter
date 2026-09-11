@@ -210,6 +210,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
+| Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -410,6 +411,39 @@ then reverses. The default example uses unscented propagation; analytic
 Jacobians are also supplied and tested.
 
 ![Heading-coupled tracking from global position and local angular-rate measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/heading-coupled-tracking.png)
+
+### Known-correspondence landmark SLAM
+
+This example jointly estimates a planar robot trajectory and the coordinates
+of eight initially uncertain landmarks. Each observation carries a known
+landmark identity, so the state has fixed dimension:
+
+```text
+x = [pₓ, pᵧ, ψ, v, ω, ℓ₁ₓ, ℓ₁ᵧ, …, ℓ₈ₓ, ℓ₈ᵧ].
+```
+
+The robot follows a heading-coupled coordinated-motion model. Wheel odometry
+measures forward speed and yaw rate, while visible landmarks provide noisy
+range and bearing. As in the bearings-only example, bearing is represented by
+a local-frame unit vector to avoid a discontinuous residual at `±π`:
+
+```text
+ρᵢ = ‖ℓᵢ - p‖
+uᵢ = R(-ψ) (ℓᵢ - p) / ρᵢ.
+```
+
+SLAM determines geometry only up to an arbitrary global translation and
+rotation. The example therefore uses a tight prior on the initial robot pose
+to define the world frame, while landmark priors begin more than a metre from
+their true positions. The robot completes a loop through the map, repeatedly
+changing which landmarks fall inside the sensor range and field of view.
+Reobserving early landmarks closes the loop and sharpens both the trajectory
+and map.
+
+The default run uses analytic Jacobians, as in classical EKF-SLAM. Unscented
+filtering and smoothing are also supported and covered by the tests.
+
+![Known-correspondence SLAM with joint trajectory and landmark-map reconstruction](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/known-correspondence-slam.png)
 
 ### Constant-acceleration tracking
 
