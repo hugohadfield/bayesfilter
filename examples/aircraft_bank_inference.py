@@ -11,9 +11,10 @@ The hidden state is
 
 ``[x, y, z, speed, course, flight_path_angle, bank]``.
 
-No attitude measurements are supplied. ``flight_path_angle`` is the elevation
-angle of the velocity vector, not body pitch; inferring body pitch would also
-require an angle-of-attack or aerodynamic model.
+No attitude measurements are supplied. The dynamics are propagated at 10 Hz
+while noisy position fixes arrive at only 1 Hz. ``flight_path_angle`` is the
+elevation angle of the velocity vector, not body pitch; inferring body pitch
+would also require an angle-of-attack or aerodynamic model.
 """
 
 from pathlib import Path
@@ -38,7 +39,8 @@ BANK = 6
 STATE_SIZE = 7
 
 DEFAULT_DURATION_S = 180.0
-DEFAULT_SAMPLE_RATE_HZ = 1.0
+DEFAULT_FILTER_RATE_HZ = 10.0
+DEFAULT_POSITION_RATE_HZ = 1.0
 POSITION_STD_M = np.array([35.0, 35.0, 22.0])
 
 
@@ -268,19 +270,31 @@ def simulate_aircraft_truth(times):
 def run_aircraft_bank_inference(
     seed=231,
     duration_s=DEFAULT_DURATION_S,
-    sample_rate_hz=DEFAULT_SAMPLE_RATE_HZ,
+    filter_rate_hz=DEFAULT_FILTER_RATE_HZ,
+    position_rate_hz=DEFAULT_POSITION_RATE_HZ,
     use_jacobian=False,
 ):
     """Infer latent aircraft maneuver state from noisy position-only tracks."""
     rng = np.random.default_rng(seed)
-    delta_t_s = 1.0 / sample_rate_hz
-    times = np.arange(round(duration_s * sample_rate_hz) + 1) * delta_t_s
+    delta_t_s = 1.0 / filter_rate_hz
+    times = np.arange(round(duration_s * filter_rate_hz) + 1) * delta_t_s
     truth = simulate_aircraft_truth(times)
 
-    measurements = truth[1:, :3] + rng.normal(
+    position_interval_steps = round(filter_rate_hz / position_rate_hz)
+    if not np.isclose(position_interval_steps * position_rate_hz, filter_rate_hz):
+        raise ValueError("position_rate_hz must divide filter_rate_hz")
+
+    position_indices = np.arange(
+        position_interval_steps,
+        len(times),
+        position_interval_steps,
+    )
+    position_times = times[position_indices]
+    position_truth = truth[position_indices, :3]
+    measurements = position_truth + rng.normal(
         0.0,
         POSITION_STD_M,
-        size=(len(times) - 1, 3),
+        size=position_truth.shape,
     )
     observations = [
         Observation(
@@ -310,7 +324,10 @@ def run_aircraft_bank_inference(
         aircraft_transition_jacobian,
     )
 
-    initial_mean = truth[0] + np.array(
+    # BayesianFilter.run() predicts one fixed-rate step before handling the
+    # first observation, so initialise one filter step before the first fix.
+    initial_truth_index = position_indices[0] - 1
+    initial_mean = truth[initial_truth_index] + np.array(
         [
             100.0,
             -80.0,
@@ -336,14 +353,16 @@ def run_aircraft_bank_inference(
         transition_model,
         Gaussian(initial_mean, np.diag(initial_std**2)),
     )
-    filter_states = bayes_filter.run_synchronous(
+    filter_states, filter_times = bayes_filter.run(
         observations,
-        times,
+        position_times,
+        rate_hz=filter_rate_hz,
         use_jacobian=use_jacobian,
     )
+    filter_times = np.asarray(filter_times)
     smoother_states = RTS(bayes_filter).apply(
         filter_states,
-        times,
+        filter_times,
         use_jacobian=use_jacobian,
     )
 
@@ -356,31 +375,35 @@ def run_aircraft_bank_inference(
         [state.covariance() for state in smoother_states]
     )
 
+    aligned_indices = np.rint(filter_times * filter_rate_hz).astype(int)
+    aligned_truth = truth[aligned_indices]
+
     def position_rmse(states):
         return float(
             np.sqrt(
                 np.mean(
-                    np.sum((states[:, :3] - truth[:, :3]) ** 2, axis=1)
+                    np.sum((states[:, :3] - aligned_truth[:, :3]) ** 2, axis=1)
                 )
             )
         )
 
     def angular_rmse_deg(states, state_index):
-        error = states[:, state_index] - truth[:, state_index]
+        error = states[:, state_index] - aligned_truth[:, state_index]
         return float(np.rad2deg(np.sqrt(np.mean(error**2))))
 
-    turning = np.abs(truth[:, BANK]) > np.deg2rad(10.0)
+    turning = np.abs(aligned_truth[:, BANK]) > np.deg2rad(10.0)
     raw_measurement_rmse = float(
         np.sqrt(
             np.mean(
-                np.sum((measurements - truth[1:, :3]) ** 2, axis=1)
+                np.sum((measurements - position_truth) ** 2, axis=1)
             )
         )
     )
 
     return {
-        "times": times,
-        "truth": truth,
+        "times": filter_times,
+        "truth": aligned_truth,
+        "measurement_times": position_times,
         "measurements": measurements,
         "filtered": filtered,
         "smoothed": smoothed,
@@ -395,7 +418,11 @@ def run_aircraft_bank_inference(
             np.rad2deg(
                 np.sqrt(
                     np.mean(
-                        (smoothed[turning, BANK] - truth[turning, BANK]) ** 2
+                        (
+                            smoothed[turning, BANK]
+                            - aligned_truth[turning, BANK]
+                        )
+                        ** 2
                     )
                 )
             )
@@ -409,7 +436,8 @@ def run_aircraft_bank_inference(
             FLIGHT_PATH_ANGLE,
         ),
         "use_jacobian": use_jacobian,
-        "sample_rate_hz": sample_rate_hz,
+        "filter_rate_hz": filter_rate_hz,
+        "position_rate_hz": position_rate_hz,
     }
 
 
