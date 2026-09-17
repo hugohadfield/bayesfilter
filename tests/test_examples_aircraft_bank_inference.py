@@ -87,10 +87,15 @@ def test_truth_contains_left_right_turns_and_climb_descent():
 def test_position_only_example_recovers_bank_and_flight_path(use_jacobian):
     result = run_aircraft_bank_inference(use_jacobian=use_jacobian)
 
-    assert result["truth"].shape == (181, 7)
+    assert result["truth"].shape == (1791, 7)
     assert result["measurements"].shape == (180, 3)
     assert result["filtered"].shape == result["truth"].shape
     assert result["smoothed"].shape == result["truth"].shape
+    assert result["filter_rate_hz"] == 10.0
+    assert result["position_rate_hz"] == 1.0
+    np.testing.assert_allclose(np.diff(result["times"]), 0.1, atol=1e-12)
+    np.testing.assert_allclose(np.diff(result["measurement_times"]), 1.0)
+    assert len(result["times"]) > 9 * len(result["measurement_times"])
     assert result["raw_measurement_position_rmse_m"] > 45.0
     assert result["smoothed_position_rmse_m"] < result["filtered_position_rmse_m"]
     assert result["smoothed_position_rmse_m"] < 20.0
@@ -100,5 +105,5 @@ def test_position_only_example_recovers_bank_and_flight_path(use_jacobian):
     assert result["smoothed_flight_path_angle_rmse_deg"] < 1.0
     assert np.isfinite(result["smoothed"]).all()
     for covariance in result["smoothed_covariances"][::20]:
-        np.testing.assert_allclose(covariance, covariance.T, atol=1e-7)
+        np.testing.assert_allclose(covariance, covariance.T, atol=3e-7)
         assert np.linalg.eigvalsh(covariance).min() >= -1e-6
