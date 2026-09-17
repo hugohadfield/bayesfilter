@@ -486,12 +486,22 @@ def plot_gnss_lever_arm_calibration(result, output_path=None):
     axes[0, 1].plot(
         times,
         result["filtered"][:, LEVER_X],
-        label="estimated lever x",
+        label="filtered lever x",
     )
     axes[0, 1].plot(
         times,
         result["filtered"][:, LEVER_Y],
-        label="estimated lever y",
+        label="filtered lever y",
+    )
+    axes[0, 1].plot(
+        times,
+        result["smoothed"][:, LEVER_X],
+        label="RTS lever x",
+    )
+    axes[0, 1].plot(
+        times,
+        result["smoothed"][:, LEVER_Y],
+        label="RTS lever y",
     )
     axes[0, 1].axhline(TRUE_LEVER_ARM_M[0], linestyle="--", label="true lever x")
     axes[0, 1].axhline(TRUE_LEVER_ARM_M[1], linestyle=":", label="true lever y")
@@ -501,13 +511,18 @@ def plot_gnss_lever_arm_calibration(result, output_path=None):
         label="turning begins",
     )
     axes[0, 1].set_ylabel("body-frame lever arm [m]")
-    axes[0, 1].set_title("Lever arm becomes observable during turns")
+    axes[0, 1].set_title("RTS uses later turns to calibrate earlier states")
     axes[0, 1].legend()
 
     axes[1, 0].plot(
         times,
         result["filtered_lever_error_m"],
-        label="lever error",
+        label="filtered lever error",
+    )
+    axes[1, 0].plot(
+        times,
+        result["smoothed_lever_error_m"],
+        label="RTS lever error",
     )
     axes[1, 0].plot(
         times,
@@ -517,7 +532,7 @@ def plot_gnss_lever_arm_calibration(result, output_path=None):
     axes[1, 0].axvline(FIRST_TURN_START_S, linestyle="-.")
     axes[1, 0].set_xlabel("time [s]")
     axes[1, 0].set_ylabel("metres")
-    axes[1, 0].set_title("Straight motion is weakly informative")
+    axes[1, 0].set_title("Straight motion is weakly informative online")
     axes[1, 0].legend()
 
     filtered_position_error = np.linalg.norm(
