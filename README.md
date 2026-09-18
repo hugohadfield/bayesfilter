@@ -210,6 +210,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
+| Gravity vector from raw IMU | `[g_b, ω]` | `python -m examples.gravity_vector_from_imu` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
@@ -412,6 +413,29 @@ then reverses. The default example uses unscented propagation; analytic
 Jacobians are also supplied and tested.
 
 ![Heading-coupled tracking from global position and local angular-rate measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/heading-coupled-tracking.png)
+
+### Gravity vector from raw IMU data
+
+This example estimates gravity expressed in the moving IMU frame directly from
+raw gyroscope and accelerometer measurements. The state is
+
+```text
+x = [g_x, g_y, g_z, ω_x, ω_y, ω_z].
+```
+
+A world-fixed gravity vector evolves in body coordinates according to
+
+```text
+g_dot = -ω × g.
+```
+
+The gyro therefore propagates the gravity direction through rotations, while
+the accelerometer supplies a long-term specific-force cue. Several deliberate
+linear-acceleration bursts make the raw accelerometer direction temporarily
+wrong; the fused estimate remains much less disturbed than simply using
+`g = -a`.
+
+![Gravity-vector estimation from raw gyro and accelerometer measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/gravity-vector-from-imu.png)
 
 ### Battery state-of-charge and resistance estimation
 
