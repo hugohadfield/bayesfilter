@@ -6,7 +6,9 @@ and true north from the Earth's tiny rotation signal.
 A static phone cannot reliably do this: consumer MEMS gyro bias and drift can
 be comparable to or larger than the 15 deg/hour Earth-rate signal. Instead the
 user repeatedly holds the phone still, moves it to an arbitrary new orientation,
-and holds it still again.
+and holds it still again. The hand motion itself is not integrated: the next
+stationary pose is re-established from gravity + magnetometer, so the user
+does not need to rotate at any known rate or stop at any prescribed angle.
 
 During each stationary dwell:
 
@@ -447,15 +449,17 @@ def run_phone_sequence(
         "filtered_navigation": filtered_navigation,
         "smoothed_navigation": smoothed_navigation,
         "filtered_navigation_std_deg": filtered_navigation_std,
-        "geometry_rank": stacked_observation_rank(
-            data["estimated_rotations"]
-        ),
+        # Structural observability is determined by the intended physical
+        # orientations, not by tiny noisy differences in the reconstructed
+        # poses. Otherwise a truly static phone would appear numerically full
+        # rank merely because its accel/magnetometer estimates jitter.
+        "geometry_rank": stacked_observation_rank(pose_rotations),
         "measurement_std_deg_hr": measurement_std,
     }
 
 
 def run_phone_gyrocompass(
-    seed=0,
+    seed=11,
     num_poses=DEFAULT_NUM_POSES,
     dwell_s=DEFAULT_DWELL_S,
     use_jacobian=True,
