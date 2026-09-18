@@ -6,6 +6,10 @@ from examples.ballistic_tracking import run_ballistic_tracking
 from examples.battery_plotting import plot_battery_state_of_charge
 from examples.battery_state_of_charge import run_battery_state_of_charge
 from examples.bearings_only import run_bearings_only_tracking
+from examples.gravity_vector_from_imu import (
+    plot_gravity_vector_from_imu,
+    run_gravity_vector_from_imu,
+)
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
@@ -62,6 +66,10 @@ def main():
     plot_heading_coupled_tracking(
         run_heading_coupled_tracking(),
         figure_directory / "heading-coupled-tracking.png",
+    )
+    plot_gravity_vector_from_imu(
+        run_gravity_vector_from_imu(),
+        figure_directory / "gravity-vector-from-imu.png",
     )
     plot_tdoa_emitter_localization(
         run_tdoa_emitter_localization(),
