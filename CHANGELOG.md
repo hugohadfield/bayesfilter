@@ -6,6 +6,9 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add phone-grade gyrocompassing from arbitrary hand reorientation, gravity,
+  magnetometer pose reconstruction, Earth-rate estimation, gyro-bias
+  calibration, latitude inference, and magnetic-declination recovery.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
