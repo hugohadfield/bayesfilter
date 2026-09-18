@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Phone gyrocompassing from hand reorientation | `[Ωₘ, b_g]` | `python -m examples.phone_gyrocompass` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,38 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Phone gyrocompassing from hand reorientation
+
+A consumer phone is held still, moved by hand to an arbitrary new orientation,
+and held still again. The hand rotation rate and exact stop angle are never
+provided. During each stationary dwell, gravity and the calibrated magnetic
+field reconstruct the phone pose relative to magnetic north; the averaged gyro
+then observes
+
+```text
+z_g = R_i Ω_E + b_g + noise.
+```
+
+The six-state filter estimates the Earth-rate vector in the magnetic local
+frame together with the slowly drifting phone-frame gyro bias:
+
+```text
+x = [Ω_magnetic, b_g].
+```
+
+A static phone is rank-deficient because Earth rate and constant gyro bias
+cannot be separated. Diverse hand reorientations rotate the Earth vector while
+the sensor bias remains attached to the phone, making the calibration full
+rank. Latitude follows from the vertical component of the inferred Earth-rate
+vector, while the horizontal angle between magnetic north and the Earth-rate
+projection gives magnetic declination and therefore true north.
+
+The synthetic gyro noise uses published Pixel 7 Pro MEMS measurements. The
+default experiment uses 24 one-minute stationary dwells and deliberately starts
+with a turn-on gyro bias larger than the 15 deg/hour Earth-rate signal.
+
+![Phone gyrocompassing from arbitrary hand reorientation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/phone-gyrocompass.png)
 
 ### Known-correspondence landmark SLAM
 
