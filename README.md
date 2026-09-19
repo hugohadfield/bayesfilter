@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Binary packet channel tracking | `[link margin]` | `python -m examples.binary_packet_channel` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,36 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Binary packet wireless channel tracking
+
+This example reconstructs a continuous hidden wireless-link margin from only
+packet success/failure bits. There is no RSSI, SNR estimate, CSI, or channel
+sounding. The state is simply
+
+```text
+x = [m],
+```
+
+where `m` is link margin in dB. Packet reception follows a smooth decoder
+threshold,
+
+```text
+p(success | m) = sigmoid(m / s).
+```
+
+The simulated link slowly worsens, suffers a temporary 7 dB shadowing event,
+and then recovers. Around 50% packet success, each 0/1 outcome is highly
+informative about `m`; when packets almost always succeed or almost always
+fail, the posterior uncertainty grows because the binary measurement has
+saturated.
+
+BayesFilter currently uses Gaussian observation residuals, so the Bernoulli
+outcome is handled as an assumed-Gaussian observation of success probability.
+This is an approximation to an exact Bernoulli likelihood, but it keeps the
+example compatible with the existing filtering API.
+
+![Continuous wireless-channel inference from binary packet outcomes](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/binary-packet-channel.png)
 
 ### Known-correspondence landmark SLAM
 
