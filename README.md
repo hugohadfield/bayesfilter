@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Sloshing fill-level inference | `[q, q_dot, h, h_dot, a_tank]` | `python -m examples.sloshing_fill_level` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,40 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Sloshing fill-level inference
+
+A 30 cm rectangular tank fills continuously from 3 cm to 22 cm depth while
+receiving a short lateral shake every roughly 15 seconds. The filter never
+observes liquid level, total liquid mass, or tank weight. Instead it uses the
+first-mode slosh dynamics,
+
+```text
+omega(h)^2 = g k tanh(k h),    k = pi / L,
+```
+
+and estimates
+
+```text
+x = [q, q_dot, h, h_dot, a_tank].
+```
+
+Here `q` is the dominant slosh-mode displacement, `h` is fill depth,
+`h_dot` is the unknown filling rate, and `a_tank` is the measured lateral
+excitation carried as a tightly observed input state. A dynamic support-load
+sensor measures the oscillatory slosh reaction after the quasistatic rigid-body
+force has been removed.
+
+Each shake excites a ring-down whose changing resonant frequency reveals the
+current fill depth. RTS smoothing then uses later ring-downs to improve earlier
+level and fill-rate estimates.
+
+The example also shows a genuine observability limit: as `h` grows,
+`tanh(k h)` approaches one, so the slosh frequency approaches its deep-water
+limit and becomes much less sensitive to additional filling. Early shakes
+therefore constrain level far more strongly than late ones.
+
+![Liquid fill level inferred from occasional sloshing](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/sloshing-fill-level.png)
 
 ### Known-correspondence landmark SLAM
 
