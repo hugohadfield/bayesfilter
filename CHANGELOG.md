@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add liquid fill-level and fill-rate inference from periodically excited
+  slosh dynamics, including the deep-water observability limit.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
