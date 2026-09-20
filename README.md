@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Bouncing ball + physical parameter inference | `[z, v, log(c_d), logit(e)]` | `python -m examples.bouncing_ball_parameter_inference` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,35 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Bouncing ball with drag and restitution inference
+
+This hybrid-system example tracks a rapidly changing ballistic trajectory while
+simultaneously inferring two stationary physical properties. The state is
+
+```text
+x = [z, v, log(c_d), logit(e)].
+```
+
+Only noisy height is measured. Between impacts,
+
+```text
+z_dot = v
+v_dot = -g - c_d v |v|,
+```
+
+while each floor contact applies
+
+```text
+v_plus = -e v_minus.
+```
+
+The two hidden parameters are revealed by different parts of the motion:
+quadratic drag is identified continuously from the curvature of the airborne
+arcs, whereas restitution remains nearly unobservable before the first impact
+and is learned from the incoming/outgoing velocity ratio at bounces.
+
+![Bouncing-ball trajectory with drag and restitution inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bouncing-ball-parameter-inference.png)
 
 ### Known-correspondence landmark SLAM
 
