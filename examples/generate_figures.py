@@ -6,6 +6,10 @@ from examples.ballistic_tracking import run_ballistic_tracking
 from examples.battery_plotting import plot_battery_state_of_charge
 from examples.battery_state_of_charge import run_battery_state_of_charge
 from examples.bearings_only import run_bearings_only_tracking
+from examples.bouncing_ball_parameter_inference import (
+    plot_bouncing_ball_parameter_inference,
+    run_bouncing_ball_parameter_inference,
+)
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
@@ -50,6 +54,10 @@ def main():
     plot_bearings_only_tracking(
         run_bearings_only_tracking(),
         figure_directory / "bearings-only-tracking.png",
+    )
+    plot_bouncing_ball_parameter_inference(
+        run_bouncing_ball_parameter_inference(),
+        figure_directory / "bouncing-ball-parameter-inference.png",
     )
     plot_ballistic_tracking(
         run_ballistic_tracking(),
