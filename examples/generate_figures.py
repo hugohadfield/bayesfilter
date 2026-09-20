@@ -9,6 +9,10 @@ from examples.bearings_only import run_bearings_only_tracking
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
+from examples.pendulum_parameter_inference import (
+    plot_pendulum_parameter_inference,
+    run_pendulum_parameter_inference,
+)
 from examples.plotting import (
     plot_ballistic_tracking,
     plot_bearings_only_tracking,
@@ -74,6 +78,10 @@ def main():
     plot_known_correspondence_slam(
         run_known_correspondence_slam(),
         figure_directory / "known-correspondence-slam.png",
+    )
+    plot_pendulum_parameter_inference(
+        run_pendulum_parameter_inference(),
+        figure_directory / "pendulum-parameter-inference.png",
     )
 
     plot_rigid_body_tracking(

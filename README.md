@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Pendulum motion + parameter inference | `[θ, θ_dot, log(L), log(c)]` | `python -m examples.pendulum_parameter_inference` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,41 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Pendulum motion with length and damping inference
+
+This example makes the two-timescale structure explicit. The fast state is the
+pendulum motion,
+
+```text
+[theta, theta_dot],
+```
+
+while the slow physical parameters are pendulum length and viscous damping:
+
+```text
+x = [theta, theta_dot, log(L), log(c)].
+```
+
+Only noisy angle is observed. Angular velocity, length, and damping are all
+inferred indirectly through the nonlinear dynamics
+
+```text
+theta_ddot = -(g / L) sin(theta) - c theta_dot.
+```
+
+The parameters are represented in log space so they remain positive, and their
+process noise is several orders of magnitude smaller than that of the rapidly
+changing motion states.
+
+The default experiment starts from a 55 degree release with a true length of
+0.75 m and damping of 0.09 1/s. The filter deliberately begins with poor
+guesses of 1.30 m and 0.25 1/s. The oscillation period identifies length within
+the first few swings, while the decay envelope identifies damping more
+gradually. RTS smoothing uses the whole record to make the stationary parameter
+history nearly constant from the beginning.
+
+![Pendulum tracking with simultaneous length and damping inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/pendulum-parameter-inference.png)
 
 ### Known-correspondence landmark SLAM
 
