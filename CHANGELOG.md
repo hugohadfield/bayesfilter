@@ -9,9 +9,6 @@ Notable changes to BayesFilter are recorded here.
 - Add wrist-camera hand-eye calibration from known robot Cartesian motion and
   intermittent 6-DoF object-pose detections, jointly estimating camera extrinsics
   and the fixed base-frame object pose.
-- Add wrist-camera hand-eye calibration from known robot motion and
-  intermittent camera-frame object-pose detections, jointly estimating the
-  camera extrinsics and fixed base-frame object pose.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
