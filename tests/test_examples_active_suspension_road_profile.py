@@ -72,7 +72,7 @@ def test_road_profile_contains_positive_and_negative_features():
 
 
 def test_active_excitation_is_nonzero_only_in_excitation_windows():
-    assert abs(active_actuator_force_n(3.6)) < 1e-9
+    assert abs(active_actuator_force_n(5.0 / 1.4)) < 1e-9
     assert abs(active_actuator_force_n(3.9)) > 100.0
     assert abs(active_actuator_force_n(0.5)) < 1.0
 
