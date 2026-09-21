@@ -212,6 +212,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
+| Wrist-camera hand-eye calibration | `[t_WC, phi_WC, t_BO, phi_BO]` | `python -m examples.wrist_camera_hand_eye_calibration` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -482,6 +483,49 @@ The default run uses analytic Jacobians, as in classical EKF-SLAM. Unscented
 filtering and smoothing are also supported and covered by the tests.
 
 ![Known-correspondence SLAM with joint trajectory and landmark-map reconstruction](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/known-correspondence-slam.png)
+
+### Wrist-camera hand-eye calibration
+
+This example calibrates a wrist-mounted camera while a robot moves through a
+known 6-DoF Cartesian wrist trajectory and intermittently detects the pose of a
+fixed object on a table.
+
+Using the transform convention `^A T_B` for a transform from frame B into
+frame A, each detection obeys
+
+```text
+^B T_O = ^B T_W(t)  ^W T_C  ^C T_O(t).
+```
+
+The known quantity is the robot wrist pose `^B T_W(t)`. The camera detector,
+whose intrinsics are assumed known upstream, produces the object pose
+`^C T_O(t)` only on frames where the object is detected.
+
+The filter jointly estimates
+
+```text
+state = [t_WC, phi_WC, t_BO, phi_BO],
+```
+
+where `^W T_C` is the desired wrist-to-camera extrinsic and `^B T_O` is the
+unknown but stationary object pose in the robot base frame. The object
+therefore does not need to be surveyed independently.
+
+Each 6-DoF detected object pose is converted to four labeled canonical object
+points in the camera frame. This preserves the full pose information while
+giving the Gaussian filter an ordinary Euclidean residual rather than directly
+subtracting rotation vectors.
+
+The synthetic detector succeeds on only about 45% of frames and includes two
+longer gaps. Missing detections simply produce no observation; the stationary
+calibration state propagates with tiny process noise.
+
+Multi-axis wrist rotation is important. Pure or nearly pure translation leaves
+parts of hand-eye calibration poorly observable, whereas the example's varied
+orientation trajectory separates camera translation, camera rotation, and the
+unknown base-frame object pose.
+
+![Wrist-camera hand-eye calibration from intermittent object poses](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/wrist-camera-hand-eye-calibration.png)
 
 ### Constant-acceleration tracking
 
