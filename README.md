@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Active suspension road-profile inference | `[z_s, v_s, z_u, v_u, r, r_dot, log(k_s), log(c_s), F_act]` | `python -m examples.active_suspension_road_profile` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,42 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Active suspension: road-profile and suspension-parameter inference
+
+This quarter-car example combines a rapidly changing latent input with slow
+physical-parameter identification. The augmented state is
+
+```text
+x = [z_s, v_s, z_u, v_u, r, r_dot, log(k_s), log(c_s), F_act],
+```
+
+where `r(t)` is the road height passing under the wheel, while `k_s` and
+`c_s` are the nearly stationary suspension stiffness and damping.
+
+The sensors measure body acceleration, wheel-hub acceleration, suspension
+travel, and the active actuator force. Road height itself is never measured.
+
+The dynamics are the standard quarter-car equations,
+
+```text
+m_s z_s_ddot = -k_s(z_s-z_u) - c_s(v_s-v_u) + F_act
+
+m_u z_u_ddot =  k_s(z_s-z_u) + c_s(v_s-v_u)
+                - k_t(z_u-r) - F_act.
+```
+
+The simulated road contains broadband roughness, a bump, a pothole, and several
+localized features that change on sub-second timescales. Meanwhile the filter
+starts from deliberately poor stiffness and damping guesses and learns them
+over several seconds. Short active-suspension force bursts improve parameter
+observability independently of the road disturbance.
+
+The road state uses a finite-bandwidth Gauss-Markov prior rather than a random
+walk. That both regularizes the inverse problem and fixes the otherwise
+unobservable common vertical datum.
+
+![Active suspension reconstructing road profile while learning stiffness and damping](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/active-suspension-road-profile.png)
 
 ### Known-correspondence landmark SLAM
 
