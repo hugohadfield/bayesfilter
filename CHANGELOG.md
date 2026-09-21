@@ -6,6 +6,9 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add wrist-camera hand-eye calibration from known robot Cartesian motion and
+  intermittent 6-DoF object-pose detections, jointly estimating camera extrinsics
+  and the fixed base-frame object pose.
 - Add wrist-camera hand-eye calibration from known robot motion and
   intermittent camera-frame object-pose detections, jointly estimating the
   camera extrinsics and fixed base-frame object pose.
