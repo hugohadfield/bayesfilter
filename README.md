@@ -211,6 +211,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Boat navigation + current and compass-bias inference | `[x, y, ψ, v_w, r, cₓ, cᵧ, b_ψ]` | `python -m examples.boat_current_compass_bias` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
@@ -449,6 +450,40 @@ analytic Jacobians are included and tested for extended filtering and
 smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
+
+### Boat navigation with current and compass-bias inference
+
+This example combines three distinct timescales in one estimator:
+
+```text
+fast state:       [x, y, psi, v_water, yaw_rate]
+slow environment: [current_x, current_y]
+stationary bias:  [compass_bias].
+```
+
+The boat receives 1 Hz GPS position fixes and 10 Hz speed-through-water,
+yaw-rate, and compass measurements. Water current itself is never observed.
+
+Its planar kinematics are
+
+```text
+p_dot = v_water [cos(psi), sin(psi)] + current
+psi_dot = yaw_rate.
+```
+
+The compass observation is represented as a unit vector
+`[cos(psi+b), sin(psi+b)]` so the residual remains continuous through the
+`±pi` angle wrap.
+
+A single straight run does not cleanly separate heading bias from water
+current: a rotated water-relative velocity can be compensated by a different
+current vector and still explain the same GPS track. The simulated boat
+therefore performs several deliberate turns. Those heading changes alter the
+water-relative velocity direction while the current remains slowly varying,
+breaking the ambiguity and allowing the estimator to recover both the current
+vector and stationary compass bias.
+
+![Boat navigation with water-current and compass-bias inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/boat-current-compass-bias.png)
 
 ### Known-correspondence landmark SLAM
 

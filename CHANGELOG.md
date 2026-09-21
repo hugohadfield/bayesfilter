@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add boat navigation with simultaneous slowly varying water-current tracking
+  and stationary compass-bias calibration from GPS, speed, gyro, and compass data.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
