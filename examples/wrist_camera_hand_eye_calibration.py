@@ -28,10 +28,11 @@ the object pose as part of the state means the example does not assume the
 table object has been surveyed in the robot base frame.
 
 The vision system is assumed to have known intrinsics upstream and to output a
-6-DoF object pose. Internally each pose detection is converted into four
-labeled canonical object points (origin + axis points) in the camera frame.
-That gives an ordinary Euclidean residual while still using the full detected
-pose, avoiding direct subtraction of rotation vectors.
+6-DoF object pose. Each pose detection is used through a local 6-D SE(3) residual: three
+translation coordinates plus the rotation logarithm
+`Log(R_meas.T @ R_pred)`. This keeps the detector's translational and
+rotational noise scales explicit while avoiding a global rotation-vector
+subtraction.
 
 Detections are deliberately intermittent and include two longer dropouts.
 Frames without a detection simply produce no Observation; the stationary
@@ -58,21 +59,10 @@ DETECTION_DROPOUTS_S = ((3.0, 4.2), (7.4, 8.6))
 
 TRANSLATION_NOISE_STD_M = 0.003
 ROTATION_NOISE_STD_RAD = np.deg2rad(0.7)
-POINT_RESIDUAL_STD_M = 0.0045
-
 CAMERA_TRANSLATION_SLICE = slice(0, 3)
 CAMERA_ROTATION_SLICE = slice(3, 6)
 OBJECT_TRANSLATION_SLICE = slice(6, 9)
 OBJECT_ROTATION_SLICE = slice(9, 12)
-
-OBJECT_CANONICAL_POINTS_M = np.array(
-    [
-        [0.0, 0.0, 0.0],
-        [0.08, 0.0, 0.0],
-        [0.0, 0.08, 0.0],
-        [0.0, 0.0, 0.08],
-    ]
-)
 
 TRUE_WRIST_TO_CAMERA_TRANSLATION_M = np.array([0.055, -0.028, 0.082])
 TRUE_WRIST_TO_CAMERA_ROTATION_VECTOR = np.array([0.045, -0.115, 0.035])
@@ -138,18 +128,6 @@ def relative_pose(
     )
 
 
-def transform_object_points(
-    translation,
-    rotation_vector,
-    canonical_points=OBJECT_CANONICAL_POINTS_M,
-):
-    """Transform canonical object points by a pose."""
-    rotation = so3_exp(rotation_vector)
-    return (
-        np.asarray(translation) + np.asarray(canonical_points) @ rotation.T
-    ).reshape(-1)
-
-
 def wrist_pose_at_time(time_s):
     """Known, sufficiently exciting Cartesian wrist trajectory."""
     time_s = float(time_s)
@@ -183,14 +161,28 @@ def _make_detection_observation(
     base_to_wrist_translation,
     base_to_wrist_rotation,
 ):
-    """Create one full-pose observation at a known robot wrist pose."""
-    measurement = transform_object_points(
-        measured_camera_to_object_translation,
-        measured_camera_to_object_rotation,
+    """Create a local 6-D SE(3) residual for one detected object pose.
+
+    The Observation value is zero. The observation function returns the
+    predicted-minus-measured pose error in the tangent space around the
+    measured pose:
+
+        [t_pred - t_meas,
+         Log(R_meas.T @ R_pred)].
+
+    This preserves the detector's translation and rotation noise scales
+    directly rather than converting orientation into artificial point
+    displacements with an arbitrary lever arm.
+    """
+    measured_rotation_matrix = so3_exp(
+        measured_camera_to_object_rotation
     )
 
     def observation_func(state):
-        camera_to_object_translation, camera_to_object_rotation = relative_pose(
+        (
+            predicted_camera_to_object_translation,
+            predicted_camera_to_object_rotation,
+        ) = relative_pose(
             base_to_wrist_translation,
             base_to_wrist_rotation,
             state[CAMERA_TRANSLATION_SLICE],
@@ -198,15 +190,28 @@ def _make_detection_observation(
             state[OBJECT_TRANSLATION_SLICE],
             state[OBJECT_ROTATION_SLICE],
         )
-        return transform_object_points(
-            camera_to_object_translation,
-            camera_to_object_rotation,
+
+        translation_error = (
+            predicted_camera_to_object_translation
+            - measured_camera_to_object_translation
+        )
+        rotation_error = so3_log(
+            measured_rotation_matrix.T
+            @ so3_exp(predicted_camera_to_object_rotation)
+        )
+        return np.concatenate(
+            (translation_error, rotation_error)
         )
 
+    measurement_covariance = np.diag(
+        [
+            *([TRANSLATION_NOISE_STD_M**2] * 3),
+            *([ROTATION_NOISE_STD_RAD**2] * 3),
+        ]
+    )
     return Observation(
-        measurement,
-        POINT_RESIDUAL_STD_M**2
-        * np.eye(OBJECT_CANONICAL_POINTS_M.size),
+        np.zeros(6),
+        measurement_covariance,
         observation_func,
     )
 
@@ -371,7 +376,9 @@ def run_wrist_camera_calibration(
 
     model = StateTransitionModel(
         calibration_transition,
-        np.diag([2.0e-9] * 12),
+        # The mount and table object are static. Retain only a tiny numerical
+        # floor instead of modeling either pose as a meaningful random walk.
+        np.diag([1.0e-12] * 12),
     )
 
     bayes_filter = BayesianFilter(
