@@ -52,7 +52,7 @@ from bayesfilter.smoothing import RTS
 from examples.rigid_body import rotation_distance, so3_exp, so3_log
 
 
-DEFAULT_DURATION_S = 12.0
+DEFAULT_DURATION_S = 15.0
 DEFAULT_RATE_HZ = 20.0
 DETECTION_PROBABILITY = 0.58
 DETECTION_DROPOUTS_S = ((3.0, 4.2), (7.4, 8.6))
@@ -341,20 +341,20 @@ def run_wrist_camera_calibration(
 
     initial_camera_translation = (
         TRUE_WRIST_TO_CAMERA_TRANSLATION_M
-        + np.array([-0.040, 0.035, 0.045])
+        + np.array([-0.010, 0.008, 0.012])
     )
     initial_camera_rotation = so3_log(
         so3_exp(TRUE_WRIST_TO_CAMERA_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([9.0, -6.0, 7.0])))
+        @ so3_exp(np.deg2rad(np.array([3.0, -2.0, 2.5])))
     )
 
     initial_object_translation = (
         TRUE_BASE_TO_OBJECT_TRANSLATION_M
-        + np.array([0.080, -0.060, 0.050])
+        + np.array([0.030, -0.020, 0.020])
     )
     initial_object_rotation = so3_log(
         so3_exp(TRUE_BASE_TO_OBJECT_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([-10.0, 8.0, 12.0])))
+        @ so3_exp(np.deg2rad(np.array([-5.0, 4.0, 6.0])))
     )
 
     initial_mean = np.concatenate(
