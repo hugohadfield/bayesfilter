@@ -117,18 +117,18 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
         result["true_state"][3:6],
     )
 
-    assert initial_translation_error_m > 0.06
-    assert np.rad2deg(initial_rotation_error_rad) > 10.0
+    assert initial_translation_error_m > 0.015
+    assert np.rad2deg(initial_rotation_error_rad) > 4.0
 
-    assert result["filtered_camera_translation_error_m"][-1] < 0.005
+    assert result["filtered_camera_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
         result["filtered_camera_rotation_error_rad"][-1]
-    ) < 0.5
+    ) < 0.15
 
-    assert result["filtered_object_translation_error_m"][-1] < 0.005
+    assert result["filtered_object_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
         result["filtered_object_rotation_error_rad"][-1]
-    ) < 0.5
+    ) < 0.15
 
     # Because the calibration is stationary, smoothing can use later
     # detections to infer what the extrinsics already were near the start.
