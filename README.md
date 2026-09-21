@@ -213,7 +213,6 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
 | Wrist-camera hand-eye calibration | `[t_WC, ϕ_WC, t_BO, ϕ_BO]` | `python -m examples.wrist_camera_hand_eye_calibration` |
-| Wrist-camera hand-eye calibration | `[t_WC, phi_WC, t_BO, phi_BO]` | `python -m examples.wrist_camera_hand_eye_calibration` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -527,40 +526,6 @@ orientation trajectory separates camera translation, camera rotation, and the
 unknown base-frame object pose.
 
 ![Wrist-camera hand-eye calibration from intermittent object poses](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/wrist-camera-hand-eye-calibration.png)
-
-### Wrist-camera hand-eye calibration
-
-This example calibrates a wrist-mounted camera from a known Cartesian robot
-trajectory and intermittent 6-DoF detections of a fixed object on the table.
-
-Using the convention that `^A T_B` maps coordinates in frame B into frame A,
-
-```text
-^B T_O = ^B T_W(t)  ^W T_C  ^C T_O(t).
-```
-
-The robot kinematics provide `^B T_W(t)` at every timestep. Vision supplies
-`^C T_O(t)` only on frames where the object is detected. The filter jointly
-estimates the stationary camera extrinsic `^W T_C` and the otherwise unknown
-fixed object pose `^B T_O`:
-
-```text
-x = [t_WC, phi_WC, t_BO, phi_BO].
-```
-
-The upstream pose detector is assumed to use known camera intrinsics. Each
-detected object pose is converted to the camera-frame positions of four labeled
-canonical object points (origin plus three axis points), so the measurement
-residual lives in ordinary Cartesian coordinates instead of directly
-subtracting rotation vectors.
-
-Detections occur on only a subset of frames and include two longer dropouts.
-Missing detections require no special handling: there is simply no observation
-at those timestamps. A trajectory with varied wrist translation and rotation
-provides the excitation needed to separate the wrist-to-camera transform from
-the fixed base-to-object transform.
-
-![Wrist-camera hand-eye calibration from intermittent object detections](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/wrist-camera-hand-eye-calibration.png)
 
 ### Constant-acceleration tracking
 
