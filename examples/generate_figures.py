@@ -2,6 +2,10 @@
 
 from pathlib import Path
 
+from examples.active_suspension_road_profile import (
+    plot_active_suspension_road_profile,
+    run_active_suspension_road_profile,
+)
 from examples.ballistic_tracking import run_ballistic_tracking
 from examples.battery_plotting import plot_battery_state_of_charge
 from examples.battery_state_of_charge import run_battery_state_of_charge
@@ -43,6 +47,10 @@ def main():
             )
 
     figure_directory = Path(__file__).parent / "figures"
+    plot_active_suspension_road_profile(
+        run_active_suspension_road_profile(),
+        figure_directory / "active-suspension-road-profile.png",
+    )
     plot_planar_tracking(
         run_planar_tracking(),
         figure_directory / "planar-trajectory-tracking.png",
