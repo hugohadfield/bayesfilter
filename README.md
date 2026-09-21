@@ -511,14 +511,20 @@ where `^W T_C` is the desired wrist-to-camera extrinsic and `^B T_O` is the
 unknown but stationary object pose in the robot base frame. The object
 therefore does not need to be surveyed independently.
 
-Each 6-DoF detected object pose is converted to four labeled canonical object
-points in the camera frame. This preserves the full pose information while
-giving the Gaussian filter an ordinary Euclidean residual rather than directly
-subtracting rotation vectors.
+Each 6-DoF detected object pose is used through a local SE(3) residual,
+
+```text
+r = [t_pred - t_meas,
+     Log(R_meas^T R_pred)].
+```
+
+This keeps translation and rotation in their natural detector noise scales and
+avoids both a global rotation-vector subtraction and an arbitrary synthetic
+lever arm.
 
 The synthetic detector succeeds on only about 45% of frames and includes two
 longer gaps. Missing detections simply produce no observation; the stationary
-calibration state propagates with tiny process noise.
+calibration state propagates with effectively zero process noise.
 
 Multi-axis wrist rotation is important. Pure or nearly pure translation leaves
 parts of hand-eye calibration poorly observable, whereas the example's varied
