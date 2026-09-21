@@ -164,9 +164,9 @@ def wrist_pose_at_time(time_s):
     )
     rotation_vector = np.array(
         [
-            0.28 * np.sin(2.0 * np.pi * time_s / 6.4),
-            -0.24 * np.sin(2.0 * np.pi * time_s / 5.3 + 0.4),
-            0.34 * np.sin(2.0 * np.pi * time_s / 7.7 - 0.3),
+            0.55 * np.sin(2.0 * np.pi * time_s / 6.4),
+            -0.48 * np.sin(2.0 * np.pi * time_s / 5.3 + 0.4),
+            0.62 * np.sin(2.0 * np.pi * time_s / 7.7 - 0.3),
         ]
     )
     return translation, rotation_vector
