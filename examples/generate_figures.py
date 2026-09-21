@@ -32,10 +32,6 @@ from examples.wrist_camera_hand_eye_calibration import (
     plot_wrist_camera_calibration,
     run_wrist_camera_calibration,
 )
-from examples.wrist_camera_hand_eye_calibration import (
-    plot_wrist_camera_calibration,
-    run_wrist_camera_calibration,
-)
 
 
 def main():
@@ -82,10 +78,6 @@ def main():
     plot_known_correspondence_slam(
         run_known_correspondence_slam(),
         figure_directory / "known-correspondence-slam.png",
-    )
-    plot_wrist_camera_calibration(
-        run_wrist_camera_calibration(),
-        figure_directory / "wrist-camera-hand-eye-calibration.png",
     )
     plot_wrist_camera_calibration(
         run_wrist_camera_calibration(),
