@@ -21,6 +21,10 @@ from examples.plotting import (
     run_and_plot_linear_example,
 )
 from examples.orbit_determination import run_orbit_determination
+from examples.radar_camera_fusion import (
+    plot_radar_camera_fusion,
+    run_radar_camera_fusion,
+)
 from examples.rigid_body import (
     run_inertia_estimation_rigid_body,
     run_known_inertia_rigid_body,
@@ -50,6 +54,10 @@ def main():
     plot_bearings_only_tracking(
         run_bearings_only_tracking(),
         figure_directory / "bearings-only-tracking.png",
+    )
+    plot_radar_camera_fusion(
+        run_radar_camera_fusion(),
+        figure_directory / "radar-camera-fusion.png",
     )
     plot_ballistic_tracking(
         run_ballistic_tracking(),

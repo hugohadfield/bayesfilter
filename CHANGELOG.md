@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add complementary radar and camera target tracking with asynchronous
+  range/range-rate and bearing observations, sensor dropouts, and single-sensor baselines.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing

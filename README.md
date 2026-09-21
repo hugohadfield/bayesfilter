@@ -206,6 +206,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
+| Radar + camera target fusion | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.radar_camera_fusion` |
 | TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
@@ -284,6 +285,45 @@ geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
 ![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
+
+### Radar + camera target fusion
+
+This example tracks a maneuvering 2-D target with two complementary sensors.
+
+The camera reports high-rate bearing as a unit vector,
+
+```text
+u_cam = (p - c) / ||p - c||,
+```
+
+so it strongly constrains direction but provides no instantaneous range.
+
+The radar reports lower-rate range and radial velocity,
+
+```text
+rho     = ||p - r||
+rho_dot = (p - r) . v / rho,
+```
+
+which strongly constrains radial position and motion but provides no bearing.
+
+The target state is
+
+```text
+x = [p_x, p_y, v_x, v_y].
+```
+
+The example includes a camera dropout and a separate radar dropout. During
+camera loss, tangential uncertainty grows; during radar loss, range uncertainty
+grows. When both sensors are available, their complementary geometry keeps the
+track tight.
+
+Camera-only and radar-only baselines use exactly the same prior and synthetic
+trajectory, making the improvement from fusion explicit. RTS smoothing then
+uses measurements after each dropout to reconstruct the missing interval more
+accurately.
+
+![Radar and camera complementary target tracking](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/radar-camera-fusion.png)
 
 ### TDOA emitter localization and clock calibration
 
