@@ -122,7 +122,7 @@ def test_iterative_ukf_rts_restarts_from_previous_smoothed_start():
     # rather than reusing the previous posterior covariance.
     for run in result["iteration_runs"]:
         np.testing.assert_allclose(
-            result["initial_covariance"],
+            run["initial_covariance"],
             result["initial_covariance"],
             atol=0.0,
         )
