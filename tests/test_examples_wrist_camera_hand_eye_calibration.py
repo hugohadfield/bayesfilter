@@ -138,8 +138,13 @@ def test_iterative_ukf_rts_improves_the_nonlinear_calibration_start():
         "iteration_camera_rotation_error_rad"
     ]
 
-    assert translation_errors[-1] < translation_errors[0]
-    assert rotation_errors[-1] < rotation_errors[0]
+    assert translation_errors[1] < 0.5 * translation_errors[0]
+    assert rotation_errors[1] < 0.75 * rotation_errors[0]
+
+    # By pass three the iterative forward/backward refinement has effectively
+    # reached a fixed point.
+    assert abs(translation_errors[2] - translation_errors[1]) < 2.0e-5
+    assert abs(rotation_errors[2] - rotation_errors[1]) < np.deg2rad(0.005)
 
 
 def test_wrist_camera_extrinsics_converge_from_bad_prior():
@@ -154,8 +159,8 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
         result["true_state"][3:6],
     )
 
-    assert initial_translation_error_m > 0.015
-    assert np.rad2deg(initial_rotation_error_rad) > 4.0
+    assert initial_translation_error_m > 0.06
+    assert np.rad2deg(initial_rotation_error_rad) > 10.0
 
     assert result["filtered_camera_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
