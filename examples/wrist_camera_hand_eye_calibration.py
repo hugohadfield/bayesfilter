@@ -353,20 +353,20 @@ def run_wrist_camera_calibration(
 
     initial_camera_translation = (
         TRUE_WRIST_TO_CAMERA_TRANSLATION_M
-        + np.array([-0.010, 0.008, 0.012])
+        + np.array([-0.040, 0.035, 0.045])
     )
     initial_camera_rotation = so3_log(
         so3_exp(TRUE_WRIST_TO_CAMERA_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([3.0, -2.0, 2.5])))
+        @ so3_exp(np.deg2rad(np.array([9.0, -6.0, 7.0])))
     )
 
     initial_object_translation = (
         TRUE_BASE_TO_OBJECT_TRANSLATION_M
-        + np.array([0.030, -0.020, 0.020])
+        + np.array([0.080, -0.060, 0.050])
     )
     initial_object_rotation = so3_log(
         so3_exp(TRUE_BASE_TO_OBJECT_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([-5.0, 4.0, 6.0])))
+        @ so3_exp(np.deg2rad(np.array([-10.0, 8.0, 12.0])))
     )
 
     initial_mean = np.concatenate(
