@@ -54,6 +54,7 @@ from examples.rigid_body import rotation_distance, so3_exp, so3_log
 
 DEFAULT_DURATION_S = 15.0
 DEFAULT_RATE_HZ = 20.0
+DEFAULT_CALIBRATION_ITERATIONS = 3
 DETECTION_PROBABILITY = 0.58
 DETECTION_DROPOUTS_S = ((3.0, 4.2), (7.4, 8.6))
 
@@ -330,8 +331,19 @@ def run_wrist_camera_calibration(
     duration_s=DEFAULT_DURATION_S,
     rate_hz=DEFAULT_RATE_HZ,
     detection_probability=DETECTION_PROBABILITY,
+    num_iterations=DEFAULT_CALIBRATION_ITERATIONS,
 ):
-    """Estimate wrist-camera extrinsics and fixed base-frame object pose."""
+    """Estimate wrist-camera extrinsics and fixed base-frame object pose.
+
+    Each iteration runs a complete forward UKF followed by RTS smoothing.
+    The next UKF restarts from the previous pass's smoothed estimate at the
+    beginning of the sequence. The covariance is deliberately reset to the
+    original broad prior covariance on every pass so repeated use of the same
+    measurements does not repeatedly shrink confidence.
+    """
+    if num_iterations < 1:
+        raise ValueError("num_iterations must be at least one")
+
     data = simulate_wrist_camera_calibration(
         seed=seed,
         duration_s=duration_s,
@@ -376,35 +388,9 @@ def run_wrist_camera_calibration(
 
     model = StateTransitionModel(
         calibration_transition,
-        # The mount and table object are static. Retain only a tiny numerical
-        # floor instead of modeling either pose as a meaningful random walk.
         np.diag([1.0e-12] * 12),
     )
 
-    bayes_filter = BayesianFilter(
-        model,
-        Gaussian(initial_mean, initial_covariance),
-    )
-    filter_states, filter_times = bayes_filter.run(
-        data["observations"],
-        data["detection_times"],
-        rate_hz=rate_hz,
-        use_jacobian=False,
-    )
-    smoother_states = RTS(bayes_filter).apply(
-        filter_states,
-        filter_times,
-        use_jacobian=False,
-    )
-
-    filtered = np.array([state.mean() for state in filter_states])
-    smoothed = np.array([state.mean() for state in smoother_states])
-    filtered_covariances = np.array(
-        [state.covariance() for state in filter_states]
-    )
-    smoothed_covariances = np.array(
-        [state.covariance() for state in smoother_states]
-    )
     true_state = data["true_state"]
 
     def camera_translation_error(states):
@@ -443,6 +429,71 @@ def run_wrist_camera_calibration(
             ]
         )
 
+    restart_mean = initial_mean.copy()
+    iteration_runs = []
+
+    for iteration_index in range(num_iterations):
+        bayes_filter = BayesianFilter(
+            model,
+            Gaussian(
+                restart_mean.copy(),
+                initial_covariance.copy(),
+            ),
+        )
+        filter_states, filter_times = bayes_filter.run(
+            data["observations"],
+            data["detection_times"],
+            rate_hz=rate_hz,
+            use_jacobian=False,
+        )
+        smoother_states = RTS(bayes_filter).apply(
+            filter_states,
+            filter_times,
+            use_jacobian=False,
+        )
+
+        filtered_iteration = np.array(
+            [state.mean() for state in filter_states]
+        )
+        smoothed_iteration = np.array(
+            [state.mean() for state in smoother_states]
+        )
+        filtered_covariances_iteration = np.array(
+            [state.covariance() for state in filter_states]
+        )
+        smoothed_covariances_iteration = np.array(
+            [state.covariance() for state in smoother_states]
+        )
+
+        iteration_runs.append(
+            {
+                "iteration": iteration_index + 1,
+                "initial_mean": restart_mean.copy(),
+                "filtered": filtered_iteration,
+                "smoothed": smoothed_iteration,
+                "filtered_covariances":
+                    filtered_covariances_iteration,
+                "smoothed_covariances":
+                    smoothed_covariances_iteration,
+                "smoothed_initial_mean":
+                    smoothed_iteration[0].copy(),
+            }
+        )
+
+        # The backward pass provides a better nonlinear starting point for the
+        # next UKF. Reset P to the original broad covariance on the next pass.
+        restart_mean = smoothed_iteration[0].copy()
+
+    final_run = iteration_runs[-1]
+    filtered = final_run["filtered"]
+    smoothed = final_run["smoothed"]
+    filtered_covariances = final_run["filtered_covariances"]
+    smoothed_covariances = final_run["smoothed_covariances"]
+
+    iteration_smoothed_initial_means = np.array(
+        [run["smoothed_initial_mean"] for run in iteration_runs]
+    )
+
     return {
         **data,
         "filter_times": np.asarray(filter_times),
@@ -451,6 +502,27 @@ def run_wrist_camera_calibration(
         "filtered_covariances": filtered_covariances,
         "smoothed_covariances": smoothed_covariances,
         "initial_mean": initial_mean,
+        "initial_covariance": initial_covariance,
+        "num_iterations": num_iterations,
+        "iteration_runs": iteration_runs,
+        "iteration_smoothed_initial_means":
+            iteration_smoothed_initial_means,
+        "iteration_camera_translation_error_m":
+            camera_translation_error(
+                iteration_smoothed_initial_means
+            ),
+        "iteration_camera_rotation_error_rad":
+            camera_rotation_error(
+                iteration_smoothed_initial_means
+            ),
+        "iteration_object_translation_error_m":
+            object_translation_error(
+                iteration_smoothed_initial_means
+            ),
+        "iteration_object_rotation_error_rad":
+            object_rotation_error(
+                iteration_smoothed_initial_means
+            ),
         "filtered_camera_translation_error_m":
             camera_translation_error(filtered),
         "smoothed_camera_translation_error_m":
@@ -588,6 +660,12 @@ def _print_summary(result):
         f"  detection fraction: "
         f"{100.0 * result['detection_fraction']:.1f}%"
     )
+    for iteration_index in range(result["num_iterations"]):
+        print(
+            f"  pass {iteration_index + 1} RTS-start error: "
+            f"{1000.0 * result['iteration_camera_translation_error_m'][iteration_index]:.2f} mm, "
+            f"{np.rad2deg(result['iteration_camera_rotation_error_rad'][iteration_index]):.3f} deg"
+        )
     print(
         f"  final extrinsic translation error: "
         f"{1000.0 * result['filtered_camera_translation_error_m'][-1]:.2f} mm"
