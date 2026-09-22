@@ -105,6 +105,43 @@ def test_detections_are_intermittent_and_include_long_dropouts():
         )
 
 
+def test_iterative_ukf_rts_restarts_from_previous_smoothed_start():
+    result = run_wrist_camera_calibration()
+
+    assert result["num_iterations"] == 3
+    assert len(result["iteration_runs"]) == 3
+
+    for index in range(1, result["num_iterations"]):
+        np.testing.assert_allclose(
+            result["iteration_runs"][index]["initial_mean"],
+            result["iteration_runs"][index - 1]["smoothed_initial_mean"],
+            atol=1e-12,
+        )
+
+    # Every forward pass deliberately restarts with the original broad P0,
+    # rather than reusing the previous posterior covariance.
+    for run in result["iteration_runs"]:
+        np.testing.assert_allclose(
+            result["initial_covariance"],
+            result["initial_covariance"],
+            atol=0.0,
+        )
+
+
+def test_iterative_ukf_rts_improves_the_nonlinear_calibration_start():
+    result = run_wrist_camera_calibration()
+
+    translation_errors = result[
+        "iteration_camera_translation_error_m"
+    ]
+    rotation_errors = result[
+        "iteration_camera_rotation_error_rad"
+    ]
+
+    assert translation_errors[-1] < translation_errors[0]
+    assert rotation_errors[-1] < rotation_errors[0]
+
+
 def test_wrist_camera_extrinsics_converge_from_bad_prior():
     result = run_wrist_camera_calibration()
 
