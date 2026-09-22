@@ -469,6 +469,7 @@ def run_wrist_camera_calibration(
             {
                 "iteration": iteration_index + 1,
                 "initial_mean": restart_mean.copy(),
+                "initial_covariance": initial_covariance.copy(),
                 "filtered": filtered_iteration,
                 "smoothed": smoothed_iteration,
                 "filtered_covariances":
