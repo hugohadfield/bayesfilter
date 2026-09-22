@@ -526,6 +526,19 @@ The synthetic detector succeeds on only about 45% of frames and includes two
 longer gaps. Missing detections simply produce no observation; the stationary
 calibration state propagates with effectively zero process noise.
 
+The nonlinear calibration is refined with three complete forward/backward
+passes:
+
+```text
+UKF_1 -> RTS_1 -> UKF_2 -> RTS_2 -> UKF_3 -> RTS_3
+```
+
+After each RTS pass, the smoothed estimate at the beginning of the sequence is
+used as the mean of the next UKF prior. The original broad prior covariance is
+restored for every new forward pass, so the repeated optimization improves the
+nonlinear starting point without pretending that the same measurements are
+independent new information.
+
 Multi-axis wrist rotation is important. Pure or nearly pure translation leaves
 parts of hand-eye calibration poorly observable, whereas the example's varied
 orientation trajectory separates camera translation, camera rotation, and the
