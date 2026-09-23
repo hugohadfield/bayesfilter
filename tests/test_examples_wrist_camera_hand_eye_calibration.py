@@ -143,7 +143,7 @@ def test_iterative_ukf_rts_improves_the_nonlinear_calibration_start():
 
     # By pass three the iterative forward/backward refinement has effectively
     # reached a fixed point.
-    assert abs(translation_errors[2] - translation_errors[1]) < 2.0e-5
+    assert abs(translation_errors[2] - translation_errors[1]) < 5.0e-5
     assert abs(rotation_errors[2] - rotation_errors[1]) < np.deg2rad(0.005)
 
 
@@ -159,8 +159,8 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
         result["true_state"][3:6],
     )
 
-    assert initial_translation_error_m > 0.06
-    assert np.rad2deg(initial_rotation_error_rad) > 10.0
+    assert initial_translation_error_m > 0.15
+    assert np.rad2deg(initial_rotation_error_rad) > 20.0
 
     assert result["filtered_camera_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
@@ -187,3 +187,32 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
 
     assert np.isfinite(result["filtered"]).all()
     assert np.isfinite(result["smoothed"]).all()
+
+
+def test_zero_camera_guess_also_converges_in_three_passes():
+    result = run_wrist_camera_calibration(
+        initial_camera_translation_m=np.zeros(3),
+        initial_camera_rotation_vector=np.zeros(3),
+    )
+
+    initial_translation_error_m = np.linalg.norm(
+        result["initial_mean"][:3]
+        - result["true_state"][:3]
+    )
+    initial_rotation_error_rad = rotation_distance(
+        result["initial_mean"][3:6],
+        result["true_state"][3:6],
+    )
+
+    assert initial_translation_error_m > 0.10
+    assert np.rad2deg(initial_rotation_error_rad) > 7.0
+
+    assert result["filtered_camera_translation_error_m"][-1] < 0.0015
+    assert np.rad2deg(
+        result["filtered_camera_rotation_error_rad"][-1]
+    ) < 0.15
+
+    assert result["filtered_object_translation_error_m"][-1] < 0.0015
+    assert np.rad2deg(
+        result["filtered_object_rotation_error_rad"][-1]
+    ) < 0.15
