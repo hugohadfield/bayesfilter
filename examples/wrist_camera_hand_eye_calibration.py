@@ -332,6 +332,8 @@ def run_wrist_camera_calibration(
     rate_hz=DEFAULT_RATE_HZ,
     detection_probability=DETECTION_PROBABILITY,
     num_iterations=DEFAULT_CALIBRATION_ITERATIONS,
+    initial_camera_translation_m=None,
+    initial_camera_rotation_vector=None,
 ):
     """Estimate wrist-camera extrinsics and fixed base-frame object pose.
 
@@ -340,6 +342,10 @@ def run_wrist_camera_calibration(
     beginning of the sequence. The covariance is deliberately reset to the
     original broad prior covariance on every pass so repeated use of the same
     measurements does not repeatedly shrink confidence.
+
+    The default camera prior is intentionally generic and far from the truth;
+    the object pose is bootstrapped from the first detection. No true
+    calibration quantity is used to initialize either unknown transform.
     """
     if num_iterations < 1:
         raise ValueError("num_iterations must be at least one")
@@ -351,22 +357,51 @@ def run_wrist_camera_calibration(
         detection_probability=detection_probability,
     )
 
-    initial_camera_translation = (
-        TRUE_WRIST_TO_CAMERA_TRANSLATION_M
-        + np.array([-0.040, 0.035, 0.045])
-    )
-    initial_camera_rotation = so3_log(
-        so3_exp(TRUE_WRIST_TO_CAMERA_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([9.0, -6.0, 7.0])))
-    )
+    # Use a deliberately poor generic camera guess that is independent of the
+    # simulated truth. Callers may instead pass zero translation + identity
+    # rotation when literally no wrist-camera calibration is known.
+    if initial_camera_translation_m is None:
+        initial_camera_translation = np.array(
+            [0.15, -0.10, 0.20]
+        )
+    else:
+        initial_camera_translation = np.asarray(
+            initial_camera_translation_m,
+            dtype=float,
+        ).copy()
 
-    initial_object_translation = (
-        TRUE_BASE_TO_OBJECT_TRANSLATION_M
-        + np.array([0.080, -0.060, 0.050])
+    if initial_camera_rotation_vector is None:
+        initial_camera_rotation = np.deg2rad(
+            np.array([20.0, -15.0, 18.0])
+        )
+    else:
+        initial_camera_rotation = np.asarray(
+            initial_camera_rotation_vector,
+            dtype=float,
+        ).copy()
+
+    # The fixed object pose is not assumed known. Bootstrap it from the first
+    # successful detection using the same crude camera extrinsic guess. This
+    # gives a geometrically consistent starting point without privileged
+    # knowledge of either unknown transform.
+    first_detection_index = data["detection_indices"][0]
+    first_camera_to_object = data[
+        "measured_object_poses_camera"
+    ][0]
+    (
+        initial_base_to_camera_translation,
+        initial_base_to_camera_rotation,
+    ) = compose_pose(
+        data["wrist_translations_m"][first_detection_index],
+        data["wrist_rotation_vectors"][first_detection_index],
+        initial_camera_translation,
+        initial_camera_rotation,
     )
-    initial_object_rotation = so3_log(
-        so3_exp(TRUE_BASE_TO_OBJECT_ROTATION_VECTOR)
-        @ so3_exp(np.deg2rad(np.array([-10.0, 8.0, 12.0])))
+    initial_object_translation, initial_object_rotation = compose_pose(
+        initial_base_to_camera_translation,
+        initial_base_to_camera_rotation,
+        first_camera_to_object[:3],
+        first_camera_to_object[3:6],
     )
 
     initial_mean = np.concatenate(
@@ -379,10 +414,10 @@ def run_wrist_camera_calibration(
     )
     initial_covariance = np.diag(
         [
-            *([0.08**2] * 3),
-            *([np.deg2rad(15.0) ** 2] * 3),
-            *([0.12**2] * 3),
-            *([np.deg2rad(20.0) ** 2] * 3),
+            *([0.25**2] * 3),
+            *([np.deg2rad(45.0) ** 2] * 3),
+            *([0.35**2] * 3),
+            *([np.deg2rad(60.0) ** 2] * 3),
         ]
     )
 
