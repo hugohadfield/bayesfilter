@@ -539,6 +539,11 @@ restored for every new forward pass, so the repeated optimization improves the
 nonlinear starting point without pretending that the same measurements are
 independent new information.
 
+The default camera prior is intentionally generic and does not use the true
+extrinsic. The unknown base-frame object pose is bootstrapped from the first
+successful object detection using that same crude camera guess. An explicit
+zero-translation / identity-rotation camera start is also covered by the tests.
+
 Multi-axis wrist rotation is important. Pure or nearly pure translation leaves
 parts of hand-eye calibration poorly observable, whereas the example's varied
 orientation trajectory separates camera translation, camera rotation, and the
