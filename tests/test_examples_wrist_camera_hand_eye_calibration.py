@@ -162,14 +162,14 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
     assert initial_translation_error_m > 0.15
     assert np.rad2deg(initial_rotation_error_rad) > 20.0
 
-    assert result["filtered_camera_translation_error_m"][-1] < 0.0015
+    assert result["iteration_camera_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
-        result["filtered_camera_rotation_error_rad"][-1]
+        result["iteration_camera_rotation_error_rad"][-1]
     ) < 0.15
 
-    assert result["filtered_object_translation_error_m"][-1] < 0.0015
+    assert result["iteration_object_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
-        result["filtered_object_rotation_error_rad"][-1]
+        result["iteration_object_rotation_error_rad"][-1]
     ) < 0.15
 
     # Because the calibration is stationary, smoothing can use later
@@ -207,12 +207,12 @@ def test_zero_camera_guess_also_converges_in_three_passes():
     assert initial_translation_error_m > 0.10
     assert np.rad2deg(initial_rotation_error_rad) > 7.0
 
-    assert result["filtered_camera_translation_error_m"][-1] < 0.0015
+    assert result["iteration_camera_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
-        result["filtered_camera_rotation_error_rad"][-1]
+        result["iteration_camera_rotation_error_rad"][-1]
     ) < 0.15
 
-    assert result["filtered_object_translation_error_m"][-1] < 0.0015
+    assert result["iteration_object_translation_error_m"][-1] < 0.0015
     assert np.rad2deg(
-        result["filtered_object_rotation_error_rad"][-1]
+        result["iteration_object_rotation_error_rad"][-1]
     ) < 0.15
