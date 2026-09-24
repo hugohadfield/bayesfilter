@@ -206,6 +206,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
+| Quantized encoder noise | `[θ, ω]` | `python -m examples.quantization_noise` |
 | TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
@@ -284,6 +285,49 @@ geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
 ![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
+
+### Quantization noise: resolution is not one sigma
+
+A finite-resolution sensor reports one quantization bin centre. If the unknown
+true location within a bin is approximately uniform,
+
+```text
+e_q ~ Uniform(-Delta/2, +Delta/2),
+```
+
+then
+
+```text
+Var(e_q) = Delta^2 / 12
+sigma_q  = Delta / sqrt(12).
+```
+
+For a 0.1-degree encoder, this gives about 0.0289 degrees RMS quantization
+noise. Using the sensor resolution itself as one standard deviation,
+
+```text
+R = Delta^2,
+```
+
+therefore overstates the quantization variance by a factor of 12. The example
+feeds the same quantized angle measurements to two otherwise identical
+`[theta, angular_rate]` Kalman filters and compares that common choice against
+
+```text
+R = Delta^2 / 12.
+```
+
+Besides tracking error, the example plots normalized innovation squared (NIS).
+For the deterministic run, the measured quantization error has a standard
+deviation close to `Delta / sqrt(12)`; the `Delta^2 / 12` filter has mean NIS
+near one, while the `Delta^2` filter is visibly over-conservative.
+
+The uniform-bin model is still an approximation. It is most appropriate when
+the signal moves through quantizer phase rather than remaining trapped in only
+one or two bins, and it does not model clipping, saturation, or other
+deterministic quantizer effects.
+
+![Quantization-noise covariance comparison](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/quantization-noise-comparison.png)
 
 ### TDOA emitter localization and clock calibration
 
