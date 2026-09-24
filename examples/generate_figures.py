@@ -21,6 +21,10 @@ from examples.plotting import (
     run_and_plot_linear_example,
 )
 from examples.orbit_determination import run_orbit_determination
+from examples.quantization_noise import (
+    plot_quantization_noise_comparison,
+    run_quantization_noise_comparison,
+)
 from examples.rigid_body import (
     run_inertia_estimation_rigid_body,
     run_known_inertia_rigid_body,
@@ -74,6 +78,10 @@ def main():
     plot_known_correspondence_slam(
         run_known_correspondence_slam(),
         figure_directory / "known-correspondence-slam.png",
+    )
+    plot_quantization_noise_comparison(
+        run_quantization_noise_comparison(),
+        figure_directory / "quantization-noise-comparison.png",
     )
 
     plot_rigid_body_tracking(
