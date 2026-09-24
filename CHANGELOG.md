@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add a quantized-encoder learning example comparing `R = Delta^2` with the
+  uniform-bin quantization model `R = Delta^2 / 12`, including NIS diagnostics.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
