@@ -7,6 +7,10 @@ from examples.battery_plotting import plot_battery_state_of_charge
 from examples.battery_state_of_charge import run_battery_state_of_charge
 from examples.bearings_only import run_bearings_only_tracking
 from examples.heading_coupled import run_heading_coupled_tracking
+from examples.ins_gps_fusion import (
+    plot_ins_gps_fusion,
+    run_ins_gps_fusion,
+)
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
 from examples.plotting import (
@@ -62,6 +66,10 @@ def main():
     plot_heading_coupled_tracking(
         run_heading_coupled_tracking(),
         figure_directory / "heading-coupled-tracking.png",
+    )
+    plot_ins_gps_fusion(
+        run_ins_gps_fusion(),
+        figure_directory / "ins-gps-fusion.png",
     )
     plot_tdoa_emitter_localization(
         run_tdoa_emitter_localization(),
