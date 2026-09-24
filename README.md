@@ -206,6 +206,7 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
+| Black-box INS + GPS fusion | `[t_GL, ψ_GL, v_drift, ω_drift]` | `python -m examples.ins_gps_fusion` |
 | TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
@@ -284,6 +285,52 @@ geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
 ![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
+
+### Black-box INS + GPS fusion
+
+This example treats the INS as an existing navigation system rather than
+re-integrating raw accelerometer and gyroscope measurements. The INS provides
+a smooth 6-DoF body pose in a drifting local frame `L`, while GPS provides
+noisy global antenna positions in frame `G`.
+
+The filter estimates the slowly wandering local-to-global correction
+
+```text
+x = [t_GL, psi_GL, v_drift, omega_drift],
+```
+
+where `t_GL` is three-dimensional translation, `psi_GL` is global yaw
+alignment, and the remaining terms describe their slow drift. Roll and pitch
+come directly from the gravity-aligned INS attitude.
+
+For each local INS pose, the fused global pose is
+
+```text
+^G T_B = ^G T_L ^L T_B.
+```
+
+GPS observes a known antenna lever arm on the body:
+
+```text
+p_GPS = t_GL + Rz(psi_GL) (p_LB + R_LB r_antenna) + noise.
+```
+
+The synthetic INS is locally smooth but its frame translation and yaw wander
+slowly. GPS arrives at 2 Hz with 0.6 m standard deviation and is completely
+absent from 18--30 seconds. A fixed initial INS alignment therefore drifts
+badly in global coordinates. Filtering continuously estimates the frame
+wander; during the outage its uncertainty grows and the estimate follows the
+learned drift dynamics. RTS smoothing then uses GPS measurements after the
+outage to reconstruct a substantially better trajectory through the missing
+interval.
+
+The default deterministic example gives roughly 17 m position RMSE if the
+initial INS alignment is never corrected, about 0.8 m with online filtering,
+and about 0.3 m after RTS smoothing. Through the 12-second GPS outage, the
+filtered trajectory is about 1.3 m RMSE and the smoothed trajectory about
+0.46 m RMSE.
+
+![Black-box INS and GPS fusion](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/ins-gps-fusion.png)
 
 ### TDOA emitter localization and clock calibration
 

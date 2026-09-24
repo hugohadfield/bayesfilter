@@ -6,6 +6,8 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add black-box INS and GPS fusion with drifting local-to-global alignment,
+  a long GPS outage, and RTS reconstruction through the outage.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
