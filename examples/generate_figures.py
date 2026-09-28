@@ -13,6 +13,10 @@ from examples.bearings_only import run_bearings_only_tracking
 from examples.boat_navigation import run_boat_navigation
 from examples.boat_plotting import plot_boat_navigation
 from examples.heading_coupled import run_heading_coupled_tracking
+from examples.ins_gps_fusion import (
+    plot_ins_gps_fusion,
+    run_ins_gps_fusion,
+)
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
 from examples.pendulum_parameter_inference import (
