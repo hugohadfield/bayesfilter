@@ -11,6 +11,10 @@ from examples.boat_plotting import plot_boat_navigation
 from examples.heading_coupled import run_heading_coupled_tracking
 from examples.linear_tracking import run_planar_tracking
 from examples.known_correspondence_slam import run_known_correspondence_slam
+from examples.pendulum_parameter_inference import (
+    plot_pendulum_parameter_inference,
+    run_pendulum_parameter_inference,
+)
 from examples.plotting import (
     plot_ballistic_tracking,
     plot_bearings_only_tracking,
