@@ -4,34 +4,42 @@ Notable changes to BayesFilter are recorded here.
 
 ## Unreleased
 
+## 0.2.0 - 2026-09-28
+
 ### Added
 
-- Add sensor-fusion examples for phone gyrocompassing, raw-IMU gravity,
-  radar/camera tracking, black-box INS/GPS alignment, and boat navigation with
-  current and compass-bias inference.
-- Add calibration examples for wrist-camera hand-eye transforms, camera/gyro
-  rotation and timing, GNSS and IMU lever arms, vehicle wheel radius, and
-  speedometer bias.
-- Add physical-system examples for pendulum, bouncing-ball, tank-sloshing,
-  active-suspension, building-thermal, vehicle coast-down, and wheel-slip
-  parameter inference.
-- Add examples for binary-packet channel tracking, quantization-noise
-  covariance, Doppler-only localization, angles-only asteroid orbits,
-  spacecraft-flyby mass inference, and position-only aircraft bank inference.
-- Add a complete reproducible figure gallery and README catalog for every
-  runnable application example.
-- Add a sun-aided island-navigation example fusing sparse noisy speed-log,
-  human landmark bearing/range, and Sun-vector observations while estimating
-  heading, position, turn rate, and a steady ocean current.
-- Add lithium-ion battery state-of-charge and internal-resistance estimation
-  from noisy terminal-voltage and current measurements.
-- Add known-correspondence landmark SLAM with noisy odometry, range/bearing
-  observations, loop closure, and joint trajectory/map smoothing.
-- Add moving-emitter TDOA localization with hyperbolic measurement geometry,
-  correlated timing noise, and joint receiver clock-bias inference.
-- Add ballistic radar tracking with log-space drag-coefficient inference.
-- Add low-Earth orbit determination from rotating, visibility-limited ground
-  stations using range and range-rate measurements.
+- Add 30 deterministic end-to-end examples across nonlinear tracking and
+  localization: ballistic radar tracking with drag inference, moving-emitter
+  TDOA localization with receiver clock calibration, radar/camera fusion, and
+  Doppler-only acoustic localization.
+- Add navigation and mapping examples for local/global vehicle fusion,
+  black-box INS/GPS alignment, Sun-aided island navigation, boat-current and
+  compass-bias inference, known-correspondence landmark SLAM, and aircraft-bank
+  inference from position tracks.
+- Add space-estimation examples for low-Earth orbit determination from rotating
+  ground stations, angles-only asteroid orbit determination, and planet-mass
+  inference from a spacecraft flyby.
+- Add inertial and calibration examples for raw-IMU gravity estimation, phone
+  gyrocompassing, wrist-camera hand-eye calibration, camera/gyro spatial and
+  temporal calibration, GNSS and IMU lever arms, and vehicle wheel-radius and
+  speedometer calibration.
+- Add physical-parameter examples for battery state of charge and resistance,
+  house thermal properties, pendulum length and damping, bouncing-ball drag and
+  restitution, tank fill level from sloshing, active-suspension road profile,
+  vehicle coast-down parameters, and longitudinal wheel slip.
+- Add focused measurement-model examples for quantization-noise covariance and
+  continuous wireless link-margin inference from binary packet outcomes.
+- Add integration tests for every new example, expanding the suite to cover
+  asynchronous sensing, dropouts, nonlinear observability, calibration,
+  parameter inference, filtering, and RTS smoothing.
+- Add reproducible Matplotlib generation and a 42-figure gallery covering every
+  runnable example without adding Matplotlib as a runtime dependency.
+
+### Changed
+
+- Reorganize the README example directory and walkthroughs into foundations,
+  nonlinear tracking, navigation, orbital estimation, rigid-body estimation,
+  calibration, physical parameter inference, and measurement-model lessons.
 
 ## 0.1.0 - 2026-09-10
 
