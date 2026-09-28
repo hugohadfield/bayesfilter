@@ -32,6 +32,10 @@ from examples.rigid_body import (
     run_known_inertia_rigid_body,
 )
 from examples.slam_plotting import plot_known_correspondence_slam
+from examples.sloshing_fill_level import (
+    plot_sloshing_fill_level,
+    run_sloshing_fill_level,
+)
 from examples.tdoa_emitter_localization import run_tdoa_emitter_localization
 from examples.tdoa_plotting import plot_tdoa_emitter_localization
 
