@@ -69,6 +69,10 @@ def main():
         run_heading_coupled_tracking(),
         figure_directory / "heading-coupled-tracking.png",
     )
+    plot_gravity_vector_from_imu(
+        run_gravity_vector_from_imu(),
+        figure_directory / "gravity-vector-from-imu.png",
+    )
     plot_tdoa_emitter_localization(
         run_tdoa_emitter_localization(),
         figure_directory / "tdoa-emitter-localization.png",
