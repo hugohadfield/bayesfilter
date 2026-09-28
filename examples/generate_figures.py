@@ -23,6 +23,10 @@ from examples.plotting import (
     run_and_plot_linear_example,
 )
 from examples.orbit_determination import run_orbit_determination
+from examples.phone_gyrocompass import (
+    plot_phone_gyrocompass,
+    run_phone_gyrocompass,
+)
 from examples.rigid_body import (
     run_inertia_estimation_rigid_body,
     run_known_inertia_rigid_body,
