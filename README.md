@@ -206,12 +206,37 @@ Matplotlib is not a BayesFilter runtime dependency.
 | Constant velocity, 3D | `[p, v]`, with three-vectors | `python -m examples.constant_velocity_3d` |
 | Planar trajectory tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.planar_trajectory_tracking` |
 | Bearings-only target tracking | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.bearings_only_tracking` |
+| Radar + camera target fusion | `[pₓ, pᵧ, vₓ, vᵧ]` | `python -m examples.radar_camera_fusion` |
 | TDOA emitter localization | `[pₓ, pᵧ, vₓ, vᵧ, b₂, …, b₅]` | `python -m examples.tdoa_emitter_localization` |
 | Ballistic radar tracking and drag inference | `[x, h, vₓ, vₕ, log(c_d)]` | `python -m examples.ballistic_tracking` |
 | Orbit determination from ground stations | `[rₓ, rᵧ, vₓ, vᵧ]` | `python -m examples.orbit_determination` |
 | Heading-coupled tracking | `[pₓ, pᵧ, ψ, v, κ]` | `python -m examples.heading_coupled_tracking` |
+| Gravity vector from raw IMU | `[g_b, ω]` | `python -m examples.gravity_vector_from_imu` |
 | Battery charge and resistance estimation | `[q, vₚ, log(R₀), I]` | `python -m examples.battery_state_of_charge` |
+| Phone gyrocompassing from hand reorientation | `[Ωₘ, b_g]` | `python -m examples.phone_gyrocompass` |
 | Known-correspondence landmark SLAM | `[pₓ, pᵧ, ψ, v, ω, ℓ₁, …, ℓ₈]` | `python -m examples.known_correspondence_slam` |
+| Wrist-camera hand-eye calibration | `[t_WC, ϕ_WC, t_BO, ϕ_BO]` | `python -m examples.wrist_camera_hand_eye_calibration` |
+| Sun-aided island navigation | `[p, ψ, v, ω, c]` | `python -m examples.boat_navigation` |
+| House thermal-parameter inference | `[T, log(R), log(C)]` | `python -m examples.thermal_house` |
+| Wheel-radius and speedometer calibration | `[p, v, a, log(r), b]` | `python -m examples.vehicle_wheel_calibration` |
+| Wheel-slip estimation | `[p, v, a, logit(s)]` | `python -m examples.wheel_slip_estimation` |
+| Vehicle coast-down inference | `[v, Cᵣᵣ, C_d A]` | `python -m examples.vehicle_coastdown` |
+| Angles-only asteroid orbit determination | `[x, y, vₓ, vᵧ]` | `python -m examples.asteroid_orbit` |
+| Planet mass from a spacecraft flyby | `[x, y, vₓ, vᵧ, log(μ)]` | `python -m examples.planet_flyby_mass` |
+| Camera/gyro spatiotemporal calibration | `[ϕ_CG, Δt, b_g]` | `python -m examples.camera_gyro_calibration` |
+| Local/global vehicle fusion | `[x, y, ψ, v, ω, b_g]` | `python -m examples.local_global_fusion` |
+| Aircraft bank from position tracks | `[x, y, z, v, χ, γ, ϕ]` | `python -m examples.aircraft_bank_inference` |
+| GNSS lever-arm calibration | `[x, y, ψ, v, ω, ℓₓ, ℓᵧ]` | `python -m examples.gnss_lever_arm_calibration` |
+| IMU lever-arm calibration | `[r, b_a]` | `python -m examples.imu_lever_arm_calibration` |
+| Doppler-only source localization | `[sₓ, sᵧ, f₀]` | `python -m examples.doppler_source_localization` |
+| Binary-packet channel tracking | `[link margin]` | `python -m examples.binary_packet_channel` |
+| Sloshing fill-level inference | `[q, q̇, h, ḣ, a_tank]` | `python -m examples.sloshing_fill_level` |
+| Pendulum parameter inference | `[θ, θ̇, log(L), log(c)]` | `python -m examples.pendulum_parameter_inference` |
+| Bouncing-ball parameter inference | `[z, v, log(c_d), logit(e)]` | `python -m examples.bouncing_ball_parameter_inference` |
+| Active-suspension road inference | `[z_s, v_s, z_u, v_u, r, ṙ, log(k), log(c), F]` | `python -m examples.active_suspension_road_profile` |
+| Boat current and compass-bias inference | `[x, y, ψ, v, ω, cₓ, cᵧ, b]` | `python -m examples.boat_current_compass_bias` |
+| Quantization-noise covariance | `[θ, θ̇]` | `python -m examples.quantization_noise` |
+| Black-box INS and GPS fusion | `[t_GL, ψ_GL, v_drift, ω_drift]` | `python -m examples.ins_gps_fusion` |
 | Constant acceleration, 1D | `[p, v, a]` | `python -m examples.constant_acceleration_1d` |
 | Constant acceleration, 2D | `[p, v, a]`, with two-vectors | `python -m examples.constant_acceleration_2d` |
 | Constant acceleration, 3D | `[p, v, a]`, with three-vectors | `python -m examples.constant_acceleration_3d` |
@@ -284,6 +309,45 @@ geometry. When sensor 2 returns, triangulation rapidly reduces it. The RTS
 smoother also uses those later measurements to reconstruct the dropout.
 
 ![Bearings-only target tracking with interrupted triangulation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bearings-only-tracking.png)
+
+### Radar + camera target fusion
+
+This example tracks a maneuvering 2-D target with two complementary sensors.
+
+The camera reports high-rate bearing as a unit vector,
+
+```text
+u_cam = (p - c) / ||p - c||,
+```
+
+so it strongly constrains direction but provides no instantaneous range.
+
+The radar reports lower-rate range and radial velocity,
+
+```text
+rho     = ||p - r||
+rho_dot = (p - r) . v / rho,
+```
+
+which strongly constrains radial position and motion but provides no bearing.
+
+The target state is
+
+```text
+x = [p_x, p_y, v_x, v_y].
+```
+
+The example includes a camera dropout and a separate radar dropout. During
+camera loss, tangential uncertainty grows; during radar loss, range uncertainty
+grows. When both sensors are available, their complementary geometry keeps the
+track tight.
+
+Camera-only and radar-only baselines use exactly the same prior and synthetic
+trajectory, making the improvement from fusion explicit. RTS smoothing then
+uses measurements after each dropout to reconstruct the missing interval more
+accurately.
+
+![Radar and camera complementary target tracking](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/radar-camera-fusion.png)
 
 ### TDOA emitter localization and clock calibration
 
@@ -413,6 +477,29 @@ Jacobians are also supplied and tested.
 
 ![Heading-coupled tracking from global position and local angular-rate measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/heading-coupled-tracking.png)
 
+### Gravity vector from raw IMU data
+
+This example estimates gravity expressed in the moving IMU frame directly from
+raw gyroscope and accelerometer measurements. The state is
+
+```text
+x = [g_x, g_y, g_z, ω_x, ω_y, ω_z].
+```
+
+A world-fixed gravity vector evolves in body coordinates according to
+
+```text
+g_dot = -ω × g.
+```
+
+The gyro therefore propagates the gravity direction through rotations, while
+the accelerometer supplies a long-term specific-force cue. Several deliberate
+linear-acceleration bursts make the raw accelerometer direction temporarily
+wrong; the fused estimate remains much less disturbed than simply using
+`g = -a`.
+
+![Gravity-vector estimation from raw gyro and accelerometer measurements](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/gravity-vector-from-imu.png)
+
 ### Battery state-of-charge and resistance estimation
 
 This example uses a first-order Thevenin equivalent circuit to infer a
@@ -450,6 +537,38 @@ smoothing as well.
 
 ![Battery state-of-charge and internal-resistance estimation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/battery-state-of-charge.png)
 
+### Phone gyrocompassing from hand reorientation
+
+A consumer phone is held still, moved by hand to an arbitrary new orientation,
+and held still again. The hand rotation rate and exact stop angle are never
+provided. During each stationary dwell, gravity and the calibrated magnetic
+field reconstruct the phone pose relative to magnetic north; the averaged gyro
+then observes
+
+```text
+z_g = R_i Ω_E + b_g + noise.
+```
+
+The six-state filter estimates the Earth-rate vector in the magnetic local
+frame together with the slowly drifting phone-frame gyro bias:
+
+```text
+x = [Ω_magnetic, b_g].
+```
+
+A static phone is rank-deficient because Earth rate and constant gyro bias
+cannot be separated. Diverse hand reorientations rotate the Earth vector while
+the sensor bias remains attached to the phone, making the calibration full
+rank. Latitude follows from the vertical component of the inferred Earth-rate
+vector, while the horizontal angle between magnetic north and the Earth-rate
+projection gives magnetic declination and therefore true north.
+
+The synthetic gyro noise uses published Pixel 7 Pro MEMS measurements. The
+default experiment uses 24 one-minute stationary dwells and deliberately starts
+with a turn-on gyro bias larger than the 15 deg/hour Earth-rate signal.
+
+![Phone gyrocompassing from arbitrary hand reorientation](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/phone-gyrocompass.png)
+
 ### Known-correspondence landmark SLAM
 
 This example jointly estimates a planar robot trajectory and the coordinates
@@ -482,6 +601,237 @@ The default run uses analytic Jacobians, as in classical EKF-SLAM. Unscented
 filtering and smoothing are also supported and covered by the tests.
 
 ![Known-correspondence SLAM with joint trajectory and landmark-map reconstruction](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/known-correspondence-slam.png)
+
+### Wrist-camera hand-eye calibration
+
+This example calibrates a wrist-mounted camera while a robot moves through a
+known 6-DoF Cartesian wrist trajectory and intermittently detects the pose of a
+fixed object on a table.
+
+Using the transform convention `^A T_B` for a transform from frame B into
+frame A, each detection obeys
+
+```text
+^B T_O = ^B T_W(t)  ^W T_C  ^C T_O(t).
+```
+
+The known quantity is the robot wrist pose `^B T_W(t)`. The camera detector,
+whose intrinsics are assumed known upstream, produces the object pose
+`^C T_O(t)` only on frames where the object is detected.
+
+The filter jointly estimates
+
+```text
+state = [t_WC, phi_WC, t_BO, phi_BO],
+```
+
+where `^W T_C` is the desired wrist-to-camera extrinsic and `^B T_O` is the
+unknown but stationary object pose in the robot base frame. The object
+therefore does not need to be surveyed independently.
+
+Each 6-DoF detected object pose is used through a local SE(3) residual,
+
+```text
+r = [t_pred - t_meas,
+     Log(R_meas^T R_pred)].
+```
+
+This keeps translation and rotation in their natural detector noise scales and
+avoids both a global rotation-vector subtraction and an arbitrary synthetic
+lever arm.
+
+The synthetic detector succeeds on only about 45% of frames and includes two
+longer gaps. Missing detections simply produce no observation; the stationary
+calibration state propagates with effectively zero process noise.
+
+The nonlinear calibration is refined with three complete forward/backward
+passes:
+
+```text
+UKF_1 -> RTS_1 -> UKF_2 -> RTS_2 -> UKF_3 -> RTS_3
+```
+
+After each RTS pass, the smoothed estimate at the beginning of the sequence is
+used as the mean of the next UKF prior. The original broad prior covariance is
+restored for every new forward pass, so the repeated optimization improves the
+nonlinear starting point without pretending that the same measurements are
+independent new information.
+
+The default camera prior is intentionally generic and does not use the true
+extrinsic. The unknown base-frame object pose is bootstrapped from the first
+successful object detection using that same crude camera guess. An explicit
+zero-translation / identity-rotation camera start is also covered by the tests.
+
+Multi-axis wrist rotation is important. Pure or nearly pure translation leaves
+parts of hand-eye calibration poorly observable, whereas the example's varied
+orientation trajectory separates camera translation, camera rotation, and the
+unknown base-frame object pose.
+
+![Wrist-camera hand-eye calibration from intermittent object poses](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/wrist-camera-hand-eye-calibration.png)
+
+### Further application examples
+
+The remaining examples use the same filtering and RTS machinery across
+navigation, calibration, physical-system identification, and communication
+systems. Each command in the table above regenerates the corresponding result.
+
+#### Sun-aided island navigation
+
+A sailing vessel fuses a noisy speed log, occasional human range/bearing
+estimates to a charted headland, and body-frame Sun directions. The filter
+jointly estimates position, heading, turn rate, and a steady ocean current; a
+no-Sun ablation exposes the value of the global orientation cue.
+
+![Sun-aided navigation around an island](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/boat-navigation.png)
+
+#### House thermal-parameter inference
+
+A one-zone RC building model infers indoor temperature, insulation resistance,
+and thermal capacitance from thermostat measurements, known outdoor weather,
+and heater commands over five simulated days.
+
+![House temperature, insulation, and thermal-mass inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/house-thermal-estimation.png)
+
+#### Vehicle wheel calibration and slip
+
+One example identifies effective wheel radius and dashboard-speed bias from
+wheel, speedometer, and sparse GPS measurements through a six-minute GPS
+outage. A second estimates changing longitudinal slip while traversing asphalt,
+gravel, sand, and wet grass without giving terrain labels to the filter.
+
+| Wheel-radius and speedometer calibration | Wheel-slip estimation |
+| --- | --- |
+| ![Wheel-radius and speedometer calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/vehicle-wheel-calibration.png) | ![Wheel-slip estimation across changing terrain](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/wheel-slip-estimation.png) |
+
+#### Vehicle coast-down parameter inference
+
+A flat-road coast-down separates nearly constant rolling resistance from
+speed-squared aerodynamic drag using only noisy GPS speed over a broad speed
+range.
+
+![Rolling-resistance and aerodynamic-drag inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/vehicle-coastdown.png)
+
+#### Angles-only asteroid orbit determination
+
+A moving Earth observer measures only telescope line-of-sight directions. The
+changing baseline and solar two-body dynamics recover the asteroid's
+heliocentric position and velocity without direct range observations.
+
+![Angles-only heliocentric asteroid orbit determination](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/asteroid-orbit.png)
+
+#### Planet mass from a spacecraft flyby
+
+The spacecraft state includes `log(mu)`, allowing gravitational bending during
+a close flyby to identify a planet's mass while position and velocity are
+tracked from noisy navigation fixes.
+
+![Planet-mass inference from spacecraft flyby deflection](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/planet-flyby-mass.png)
+
+#### Camera/gyro spatiotemporal calibration
+
+Asynchronous camera and gyroscope angular-velocity streams identify their
+relative rotation, clock offset, and gyro bias. Early single-axis motion is
+weakly observable; later three-axis excitation completes the calibration.
+
+![Camera-to-gyro rotation, time-offset, and bias calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/camera-gyro-calibration.png)
+
+#### Local/global vehicle fusion
+
+High-rate speed and gyro measurements propagate a planar trajectory between
+slow global position fixes. A long global-sensor outage demonstrates dead
+reckoning, gyro-bias inference, uncertainty growth, reacquisition, and RTS
+reconstruction.
+
+![Fast local sensing fused with slow global position](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/local-global-fusion.png)
+
+#### Aircraft bank inference
+
+Only noisy global position is measured. A coordinated-flight model couples
+horizontal curvature to bank angle and vertical motion to flight-path angle,
+making both latent maneuver variables observable from the track.
+
+![Aircraft bank and flight-path angle inferred from position](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/aircraft-bank-inference.png)
+
+#### GNSS and IMU lever-arm calibration
+
+Vehicle turns rotate an unknown GNSS antenna offset into the world frame,
+separating it from body position. In the three-dimensional IMU example,
+angular and centripetal acceleration identify an accelerometer's mounting
+position and bias after multi-axis excitation.
+
+| GNSS antenna lever arm | Accelerometer lever arm |
+| --- | --- |
+| ![GNSS antenna lever-arm calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/gnss-lever-arm-calibration.png) | ![IMU lever-arm and accelerometer-bias calibration](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/imu-lever-arm-calibration.png) |
+
+#### Doppler-only acoustic localization
+
+A moving receiver observes only apparent frequency from a stationary source
+whose emitted frequency is also unknown. Straight-line motion retains a mirror
+ambiguity; turning breaks it, and RTS smoothing reconstructs the earlier source
+location.
+
+![Doppler-only source localization](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/doppler-source-localization.png)
+
+#### Binary-packet channel tracking
+
+A one-state filter reconstructs continuous link margin from packet success and
+failure bits alone. The example documents its assumed-Gaussian approximation
+to a Bernoulli likelihood and shows why bits are most informative near the
+decoder threshold.
+
+![Wireless link margin inferred from binary packet outcomes](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/binary-packet-channel.png)
+
+#### Sloshing fill-level inference
+
+Short tank-acceleration pulses excite a depth-dependent liquid resonance. The
+filter infers fill depth and filling rate from dynamic support-load response
+without observing level, liquid mass, or static tank weight.
+
+![Liquid fill level inferred from slosh resonance](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/sloshing-fill-level.png)
+
+#### Pendulum and bouncing-ball parameter inference
+
+The pendulum jointly estimates motion, length, and damping from noisy angle.
+The hybrid bouncing-ball example learns quadratic drag during flight and the
+coefficient of restitution at impacts from height measurements alone.
+
+| Pendulum length and damping | Ball drag and restitution |
+| --- | --- |
+| ![Pendulum length and damping inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/pendulum-parameter-inference.png) | ![Bouncing-ball drag and restitution inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/bouncing-ball-parameter-inference.png) |
+
+#### Active-suspension road-profile inference
+
+A quarter-car model combines sprung/unsprung accelerations, suspension travel,
+and measured actuator force to reconstruct road height while learning
+suspension stiffness and damping on separate fast and slow timescales.
+
+![Road profile and suspension-parameter inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/active-suspension-road-profile.png)
+
+#### Boat current and compass-bias inference
+
+GPS, speed-through-water, yaw-rate, and magnetic-heading observations jointly
+recover boat motion, a slowly drifting water-current vector, and a stationary
+compass bias. Direction changes provide the geometry that separates current
+from calibration error.
+
+![Boat trajectory, water current, and compass-bias inference](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/boat-current-compass-bias.png)
+
+#### Quantization-noise covariance
+
+Two otherwise identical filters compare `R = Delta^2` against the uniform-bin
+model `R = Delta^2 / 12` for a quantized encoder. Tracking error and normalized
+innovation squared show why sensor resolution is not one standard deviation.
+
+![Quantization covariance and innovation consistency](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/quantization-noise-comparison.png)
+
+#### Black-box INS and GPS fusion
+
+Rather than re-integrating IMU samples, this example aligns an existing smooth
+local 6-DoF INS trajectory to sparse global GPS positions by estimating a
+slowly drifting translation and yaw transform. A 12-second GPS outage makes
+the difference between online filtering and offline smoothing explicit.
+
+![Black-box INS fused with sparse GPS through an outage](https://raw.githubusercontent.com/hugohadfield/bayesfilter/main/examples/figures/ins-gps-fusion.png)
 
 ### Constant-acceleration tracking
 

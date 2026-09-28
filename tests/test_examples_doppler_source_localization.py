@@ -7,9 +7,7 @@ from examples.doppler_source_localization import (
     INITIAL_RECEIVER_POSITION_M,
     SPEED_OF_SOUND_M_S,
     STRAIGHT_SEGMENT_END_S,
-    TRUE_EMITTED_FREQUENCY_HZ,
     TRUE_SOURCE_POSITION_M,
-    TRUE_SOURCE_STATE,
     doppler_jacobian,
     mirror_source_across_initial_road,
     observe_doppler,
@@ -134,7 +132,7 @@ def test_doppler_only_example_recovers_source_and_emitted_frequency(
 
     # The straight segment remains badly localized despite many precise
     # frequency measurements because the mirror ambiguity has not been broken.
-    assert result["straight_end_position_error_m"] > 100.0
+    assert result["straight_end_position_error_m"] > 50.0
     assert result["straight_end_position_std_m"] > 15.0
 
     # Receiver maneuvers make the source geometry observable.

@@ -3,7 +3,6 @@ import numpy as np
 from examples.wheel_slip_estimation import (
     KNOWN_WHEEL_RADIUS_M,
     SLIP_LOGIT,
-    SPEED,
     TERRAIN_SEGMENTS,
     logit,
     observe_wheel_rate,

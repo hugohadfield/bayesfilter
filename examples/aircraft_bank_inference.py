@@ -442,11 +442,11 @@ def run_aircraft_bank_inference(
 
 
 def plot_aircraft_bank_inference(result, output_path=None):
-    """Plot the 3D track and latent maneuver variables inferred from it."""
+    """Plot the ground track and latent maneuver variables inferred from it."""
     import matplotlib.pyplot as plt
 
     figure = plt.figure(figsize=(13, 9))
-    trajectory_axis = figure.add_subplot(2, 2, 1, projection="3d")
+    trajectory_axis = figure.add_subplot(2, 2, 1)
     bank_axis = figure.add_subplot(2, 2, 2)
     path_axis = figure.add_subplot(2, 2, 3)
     error_axis = figure.add_subplot(2, 2, 4)
@@ -454,14 +454,14 @@ def plot_aircraft_bank_inference(result, output_path=None):
     trajectory_axis.plot(
         result["truth"][:, X_POSITION],
         result["truth"][:, Y_POSITION],
-        result["truth"][:, Z_POSITION],
         "--",
         label="truth",
     )
-    trajectory_axis.scatter(
+    measurement_points = trajectory_axis.scatter(
         result["measurements"][:, X_POSITION],
         result["measurements"][:, Y_POSITION],
-        result["measurements"][:, Z_POSITION],
+        c=result["measurements"][:, Z_POSITION],
+        cmap="viridis",
         s=7,
         alpha=0.3,
         label="noisy position",
@@ -469,14 +469,20 @@ def plot_aircraft_bank_inference(result, output_path=None):
     trajectory_axis.plot(
         result["smoothed"][:, X_POSITION],
         result["smoothed"][:, Y_POSITION],
-        result["smoothed"][:, Z_POSITION],
         label="RTS smoothed",
     )
     trajectory_axis.set_xlabel("x [m]")
     trajectory_axis.set_ylabel("y [m]")
-    trajectory_axis.set_zlabel("z [m]")
-    trajectory_axis.set_title("Position-only aircraft track")
+    trajectory_axis.set_aspect("equal", adjustable="datalim")
+    trajectory_axis.set_title("Position-only ground track; color is altitude")
     trajectory_axis.legend()
+    figure.colorbar(
+        measurement_points,
+        ax=trajectory_axis,
+        label="measured altitude [m]",
+        fraction=0.046,
+        pad=0.04,
+    )
 
     time_s = result["times"]
     bank_axis.plot(
