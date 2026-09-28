@@ -2,12 +2,8 @@ import numpy as np
 
 from examples.boat_current_compass_bias import (
     COMPASS_BIAS_INDEX,
-    CURRENT_X_INDEX,
-    CURRENT_Y_INDEX,
     HEADING_INDEX,
     TRUE_COMPASS_BIAS_RAD,
-    WATER_SPEED_INDEX,
-    YAW_RATE_INDEX,
     boat_transition_jacobian,
     navigation_without_gps_jacobian,
     observe_navigation_without_gps,

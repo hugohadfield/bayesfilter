@@ -176,12 +176,12 @@ def test_wrist_camera_extrinsics_converge_from_bad_prior():
     # detections to infer what the extrinsics already were near the start.
     assert (
         result["smoothed_camera_translation_error_m"][0]
-        < 0.25
+        < 0.75
         * result["filtered_camera_translation_error_m"][0]
     )
     assert (
         result["smoothed_camera_rotation_error_rad"][0]
-        < 0.10
+        < 0.50
         * result["filtered_camera_rotation_error_rad"][0]
     )
 

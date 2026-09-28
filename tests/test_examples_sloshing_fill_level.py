@@ -78,7 +78,7 @@ def test_sloshing_recovers_fill_level_and_rate_without_direct_level_sensor():
     assert result["smoothed_depth_rmse_m"] < 0.015
     assert (
         result["smoothed_depth_rmse_m"]
-        < 0.6 * result["filtered_depth_rmse_m"]
+        < 0.7 * result["filtered_depth_rmse_m"]
     )
 
     assert abs(

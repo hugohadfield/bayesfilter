@@ -6,6 +6,20 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add sensor-fusion examples for phone gyrocompassing, raw-IMU gravity,
+  radar/camera tracking, black-box INS/GPS alignment, and boat navigation with
+  current and compass-bias inference.
+- Add calibration examples for wrist-camera hand-eye transforms, camera/gyro
+  rotation and timing, GNSS and IMU lever arms, vehicle wheel radius, and
+  speedometer bias.
+- Add physical-system examples for pendulum, bouncing-ball, tank-sloshing,
+  active-suspension, building-thermal, vehicle coast-down, and wheel-slip
+  parameter inference.
+- Add examples for binary-packet channel tracking, quantization-noise
+  covariance, Doppler-only localization, angles-only asteroid orbits,
+  spacecraft-flyby mass inference, and position-only aircraft bank inference.
+- Add a complete reproducible figure gallery and README catalog for every
+  runnable application example.
 - Add a sun-aided island-navigation example fusing sparse noisy speed-log,
   human landmark bearing/range, and Sun-vector observations while estimating
   heading, position, turn rate, and a steady ocean current.

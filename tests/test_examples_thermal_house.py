@@ -2,7 +2,6 @@ import numpy as np
 
 from examples.thermal_house import (
     HEATER_POWER_KW,
-    STEP_S,
     TRUE_CAPACITANCE_KWH_PER_K,
     TRUE_RESISTANCE_K_PER_KW,
     outdoor_temperature,
