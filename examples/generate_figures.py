@@ -57,6 +57,10 @@ def main():
         run_bearings_only_tracking(),
         figure_directory / "bearings-only-tracking.png",
     )
+    plot_binary_packet_channel(
+        run_binary_packet_channel(),
+        figure_directory / "binary-packet-channel.png",
+    )
     plot_ballistic_tracking(
         run_ballistic_tracking(),
         figure_directory / "ballistic-drag-estimation.png",
