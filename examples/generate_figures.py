@@ -46,6 +46,10 @@ from examples.sloshing_fill_level import (
 )
 from examples.tdoa_emitter_localization import run_tdoa_emitter_localization
 from examples.tdoa_plotting import plot_tdoa_emitter_localization
+from examples.wrist_camera_hand_eye_calibration import (
+    plot_wrist_camera_calibration,
+    run_wrist_camera_calibration,
+)
 
 
 def main():
