@@ -6,6 +6,9 @@ Notable changes to BayesFilter are recorded here.
 
 ### Added
 
+- Add a sun-aided island-navigation example fusing sparse noisy speed-log,
+  human landmark bearing/range, and Sun-vector observations while estimating
+  heading, position, turn rate, and a steady ocean current.
 - Add lithium-ion battery state-of-charge and internal-resistance estimation
   from noisy terminal-voltage and current measurements.
 - Add known-correspondence landmark SLAM with noisy odometry, range/bearing
